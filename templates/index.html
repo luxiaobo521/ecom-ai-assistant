@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电商运营AI助手 - 智能运营工具</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">电商运营AI助手</span>
+            </div>
+            <span class="badge" id="demoBadge">演示模式</span>
+        </div>
+        <div class="header-right">
+            <span class="user-info">免费版</span>
+            <button class="btn-upgrade">升级专业版</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- 左侧菜单 -->
+        <aside class="sidebar">
+            <div class="menu-item active" data-tab="title">
+                <span class="menu-icon">📝</span>
+                <span class="menu-text">商品标题生成</span>
+            </div>
+            <div class="menu-item" data-tab="detail">
+                <span class="menu-icon">📄</span>
+                <span class="menu-text">详情页文案生成</span>
+            </div>
+            <div class="menu-item" data-tab="service">
+                <span class="menu-icon">💬</span>
+                <span class="menu-text">客服话术生成</span>
+            </div>
+            <div class="menu-item" data-tab="operation">
+                <span class="menu-icon">📊</span>
+                <span class="menu-text">店铺运营诊断</span>
+            </div>
+            <div class="sidebar-footer">
+                <div class="usage-info">
+                    <div class="usage-label">今日使用次数</div>
+                    <div class="usage-count"><span id="usageCount">0</span> / 10</div>
+                    <div class="usage-bar">
+                        <div class="usage-bar-fill" id="usageBar"></div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 右侧内容区 -->
+        <main class="content">
+            <!-- 商品标题生成 -->
+            <div class="tab-content active" id="tab-title">
+                <div class="content-header">
+                    <h2>商品标题生成</h2>
+                    <p>AI智能生成高点击率商品标题，覆盖淘宝/拼多多/抖音等平台</p>
+                </div>
+                <div class="form-card">
+                    <div class="form-group">
+                        <label>商品名称 <span class="required">*</span></label>
+                        <input type="text" id="title-product" placeholder="例如：男士纯棉短袖T恤">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>商品类目</label>
+                            <select id="title-category">
+                                <option value="">请选择类目</option>
+                                <option value="男装">男装</option>
+                                <option value="女装">女装</option>
+                                <option value="鞋靴">鞋靴</option>
+                                <option value="箱包">箱包</option>
+                                <option value="美妆">美妆护肤</option>
+                                <option value="食品">食品饮料</option>
+                                <option value="家居">家居日用</option>
+                                <option value="数码">数码电器</option>
+                                <option value="母婴">母婴用品</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>目标平台</label>
+                            <select id="title-platform">
+                                <option value="淘宝">淘宝/天猫</option>
+                                <option value="拼多多">拼多多</option>
+                                <option value="抖音">抖音小店</option>
+                                <option value="京东">京东</option>
+                                <option value="快手">快手小店</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>商品卖点/特征</label>
+                        <textarea id="title-features" rows="3" placeholder="例如：100%纯棉、宽松版型、潮流印花、2026新款、多色可选、80-200斤可穿"></textarea>
+                    </div>
+                    <button class="btn-generate" onclick="generateTitle()">
+                        <span class="btn-icon">✨</span> 生成标题
+                    </button>
+                </div>
+                <div class="result-card" id="title-result" style="display:none;">
+                    <div class="result-header">
+                        <h3>生成结果</h3>
+                        <button class="btn-copy" onclick="copyResult('title-result-text')">复制全部</button>
+                    </div>
+                    <div class="result-content" id="title-result-text"></div>
+                </div>
+            </div>
+
+            <!-- 详情页文案生成 -->
+            <div class="tab-content" id="tab-detail">
+                <div class="content-header">
+                    <h2>详情页文案生成</h2>
+                    <p>AI智能生成高转化率详情页文案，包含卖点、参数、场景、售后等完整模块</p>
+                </div>
+                <div class="form-card">
+                    <div class="form-group">
+                        <label>商品名称 <span class="required">*</span></label>
+                        <input type="text" id="detail-product" placeholder="例如：男士纯棉短袖T恤">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>商品类目</label>
+                            <select id="detail-category">
+                                <option value="">请选择类目</option>
+                                <option value="男装">男装</option>
+                                <option value="女装">女装</option>
+                                <option value="鞋靴">鞋靴</option>
+                                <option value="美妆">美妆护肤</option>
+                                <option value="食品">食品饮料</option>
+                                <option value="家居">家居日用</option>
+                                <option value="数码">数码电器</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>商品价格</label>
+                            <input type="text" id="detail-price" placeholder="例如：59元">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>商品卖点/特征</label>
+                        <textarea id="detail-features" rows="3" placeholder="例如：100%纯棉、宽松版型、潮流印花、2026新款、多色可选"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>目标用户</label>
+                        <input type="text" id="detail-audience" placeholder="例如：18-35岁年轻男性，追求时尚性价比">
+                    </div>
+                    <button class="btn-generate" onclick="generateDetail()">
+                        <span class="btn-icon">✨</span> 生成详情页文案
+                    </button>
+                </div>
+                <div class="result-card" id="detail-result" style="display:none;">
+                    <div class="result-header">
+                        <h3>生成结果</h3>
+                        <button class="btn-copy" onclick="copyResult('detail-result-text')">复制全部</button>
+                    </div>
+                    <div class="result-content" id="detail-result-text"></div>
+                </div>
+            </div>
+
+            <!-- 客服话术生成 -->
+            <div class="tab-content" id="tab-service">
+                <div class="content-header">
+                    <h2>客服话术生成</h2>
+                    <p>AI智能生成客服话术库，覆盖售前售中售后全场景，提升转化和满意度</p>
+                </div>
+                <div class="form-card">
+                    <div class="form-group">
+                        <label>商品名称 <span class="required">*</span></label>
+                        <input type="text" id="service-product" placeholder="例如：男士纯棉短袖T恤">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>商品类目</label>
+                            <select id="service-category">
+                                <option value="">请选择类目</option>
+                                <option value="男装">男装</option>
+                                <option value="女装">女装</option>
+                                <option value="鞋靴">鞋靴</option>
+                                <option value="美妆">美妆护肤</option>
+                                <option value="食品">食品饮料</option>
+                                <option value="家居">家居日用</option>
+                                <option value="数码">数码电器</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>话术风格</label>
+                            <select id="service-style">
+                                <option value="亲切热情">亲切热情</option>
+                                <option value="专业严谨">专业严谨</option>
+                                <option value="活泼可爱">活泼可爱</option>
+                                <option value="简洁高效">简洁高效</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>常见问题（可选，补充您想覆盖的问题）</label>
+                        <textarea id="service-questions" rows="3" placeholder="例如：发货时间、退换货政策、尺码选择、面料材质、色差问题..."></textarea>
+                    </div>
+                    <button class="btn-generate" onclick="generateService()">
+                        <span class="btn-icon">✨</span> 生成客服话术
+                    </button>
+                </div>
+                <div class="result-card" id="service-result" style="display:none;">
+                    <div class="result-header">
+                        <h3>生成结果</h3>
+                        <button class="btn-copy" onclick="copyResult('service-result-text')">复制全部</button>
+                    </div>
+                    <div class="result-content" id="service-result-text"></div>
+                </div>
+            </div>
+
+            <!-- 店铺运营诊断 -->
+            <div class="tab-content" id="tab-operation">
+                <div class="content-header">
+                    <h2>店铺运营诊断</h2>
+                    <p>AI智能分析店铺数据，生成完整运营诊断报告和可执行优化方案</p>
+                </div>
+                <div class="form-card">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>店铺名称</label>
+                            <input type="text" id="op-shop" placeholder="例如：XX男装旗舰店">
+                        </div>
+                        <div class="form-group">
+                            <label>所在平台</label>
+                            <select id="op-platform">
+                                <option value="淘宝">淘宝/天猫</option>
+                                <option value="拼多多">拼多多</option>
+                                <option value="抖音">抖音小店</option>
+                                <option value="京东">京东</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>日均访客数</label>
+                            <input type="text" id="op-visitors" placeholder="例如：500">
+                        </div>
+                        <div class="form-group">
+                            <label>转化率</label>
+                            <input type="text" id="op-conversion" placeholder="例如：2.5%">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>客单价</label>
+                            <input type="text" id="op-order-value" placeholder="例如：85元">
+                        </div>
+                        <div class="form-group">
+                            <label>月销售额</label>
+                            <input type="text" id="op-sales" placeholder="例如：5万元">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>主营商品</label>
+                        <input type="text" id="op-products" placeholder="例如：男装T恤、衬衫、裤子">
+                    </div>
+                    <div class="form-group">
+                        <label>当前遇到的问题</label>
+                        <textarea id="op-problems" rows="3" placeholder="例如：流量上不去、转化率低、客单价低、没有爆款、退货率高..."></textarea>
+                    </div>
+                    <button class="btn-generate" onclick="generateOperation()">
+                        <span class="btn-icon">✨</span> 生成运营诊断报告
+                    </button>
+                </div>
+                <div class="result-card" id="operation-result" style="display:none;">
+                    <div class="result-header">
+                        <h3>生成结果</h3>
+                        <button class="btn-copy" onclick="copyResult('operation-result-text')">复制全部</button>
+                    </div>
+                    <div class="result-content" id="operation-result-text"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay" style="display:none;">
+        <div class="loading-box">
+            <div class="loading-spinner"></div>
+            <p>AI正在生成中，请稍候...</p>
+        </div>
+    </div>
+
+    <!-- Toast提示 -->
+    <div class="toast" id="toast"></div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

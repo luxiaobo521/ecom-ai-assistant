@@ -1,0 +1,33 @@
+{
+  "testuser2": {
+    "user_id": "3c013e50-f6a8-4a0c-96df-7b00e46ea442",
+    "username": "testuser2",
+    "email": "test2@test.com",
+    "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "created_at": 1788684639.9542449,
+    "usage_count": 0
+  },
+  "13800138000": {
+    "user_id": "936ef95f-8189-4e57-8264-01b71da0525b",
+    "username": "13800138000",
+    "phone": "13800138000",
+    "email": "",
+    "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "plan": "free",
+    "created_at": 1788685338.9025228,
+    "daily_ai_usage": 3,
+    "daily_competitor_usage": 1,
+    "last_usage_date": "2026-09-06",
+    "bound_shops": [
+      {
+        "id": "07a1eeb6-f9b6-41e6-bde1-961dfa7654bd",
+        "platform": "淘宝",
+        "shop_name": "测试店铺",
+        "auth_code": "test123",
+        "status": "active",
+        "bind_time": 1788685338.9380257,
+        "last_sync": 1788685338.9380257
+      }
+    ]
+  }
+}

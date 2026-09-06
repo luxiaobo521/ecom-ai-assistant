@@ -1576,6 +1576,22 @@ def admin_page():
             return f.read()
     return render_template('admin.html')
 
+@app.route('/style.css')
+def admin_css():
+    css_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'style.css')
+    if os.path.exists(css_path):
+        with open(css_path, 'r', encoding='utf-8') as f:
+            return f.read(), 200, {'Content-Type': 'text/css; charset=utf-8'}
+    return '', 404
+
+@app.route('/app.js')
+def admin_js():
+    js_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app.js')
+    if os.path.exists(js_path):
+        with open(js_path, 'r', encoding='utf-8') as f:
+            return f.read(), 200, {'Content-Type': 'application/javascript; charset=utf-8'}
+    return '', 404
+
 @app.route('/api/admin/health')
 def admin_health():
     return jsonify({'status': 'ok', 'time': time.time()})

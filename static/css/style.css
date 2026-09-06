@@ -1,4 +1,4 @@
-/* ============================================
+﻿/* ============================================
    电商AI运营助手 v5.0 - 全站UI/UX重设计
    对标: Stripe / Linear / Vercel / Shopify / Jasper AI / 飞书
    设计哲学: 专业、克制、高效、温暖、数据驱动、AI感、可信赖
@@ -4554,3 +4554,33 @@ ul, ol {
   .login-record { flex-direction: column; gap: 4px; align-items: flex-start; }
   .login-record-time { width: auto; }
 }
+
+
+/* 升级卡片关闭按钮 */
+.sidebar-upgrade-card {
+  position: relative;
+}
+.sidebar-upgrade-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: rgba(255,255,255,0.7);
+  font-size: 18px;
+  line-height: 1;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+.sidebar-upgrade-close:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.2);
+}
+.sidebar-upgrade.hidden {
+  display: none !important;
+}
+

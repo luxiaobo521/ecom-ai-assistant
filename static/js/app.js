@@ -68,6 +68,7 @@ function switchAdminPage(page) {
     // 页面特定初始化
     if (page === 'overview') loadOverviewData();
     if (page === 'shop-data') loadShopData();
+    if (page === 'shop-bind') loadBoundShops();
 }
 
 // ==================== 用户系统 ====================
@@ -88,7 +89,7 @@ async function handleLogin(event) {
         hideLoading();
         if (data.success) {
             showToast('登录成功！', 'success');
-            setTimeout(() => showPage('dashboard'), 500);
+            showPage('dashboard');
         } else {
             showToast(data.message || '登录失败', 'error');
         }
@@ -119,7 +120,7 @@ async function handleRegister(event) {
         hideLoading();
         if (data.success) {
             showToast('注册成功！', 'success');
-            setTimeout(() => showPage('dashboard'), 500);
+            showPage('dashboard');
         } else {
             showToast(data.message || '注册失败', 'error');
         }
@@ -130,7 +131,7 @@ async function handleLogout() {
     try {
         await fetch('/logout');
         showToast('已退出登录', 'success');
-        setTimeout(() => showPage('landing'), 300);
+        showPage('landing');
     } catch (e) { showToast('退出失败', 'error'); }
 }
 
@@ -466,7 +467,7 @@ async function bindShop() {
             showToast('店铺绑定成功！', 'success');
             document.getElementById('bind-shop-name').value = '';
             document.getElementById('bind-auth-code').value = '';
-            loadBoundShops();
+            await loadBoundShops();
         } else {
             if (data.need_upgrade) showUpgradeModal(data.message);
             else showToast(data.message || '绑定失败', 'error');

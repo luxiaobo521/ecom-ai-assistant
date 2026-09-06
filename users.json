@@ -29,5 +29,87 @@
         "last_sync": 1788685338.9380257
       }
     ]
+  },
+  "13400134000": {
+    "user_id": "d25f50e9-1939-4348-866c-88dc10090ec1",
+    "username": "13400134000",
+    "phone": "13400134000",
+    "email": "",
+    "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "plan": "free",
+    "created_at": 1788687191.2783046,
+    "daily_ai_usage": 0,
+    "daily_competitor_usage": 0,
+    "last_usage_date": "2026-09-06",
+    "bound_shops": []
+  },
+  "13300133000": {
+    "user_id": "4a5f349a-d883-4929-9133-18e372ce9b75",
+    "username": "13300133000",
+    "phone": "13300133000",
+    "email": "",
+    "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "plan": "free",
+    "created_at": 1788687252.1416757,
+    "daily_ai_usage": 3,
+    "daily_competitor_usage": 1,
+    "last_usage_date": "2026-09-06",
+    "bound_shops": [
+      {
+        "id": "e6ac8300-57c7-4ff8-a2c1-06e394e941c1",
+        "platform": "淘宝",
+        "shop_name": "测试淘宝店",
+        "auth_code": "test123456",
+        "status": "active",
+        "bind_time": 1788687300.9018836,
+        "last_sync": 1788687300.9018838
+      }
+    ]
+  },
+  "13200132000": {
+    "user_id": "5947763d-cd3a-4d6f-b53f-ef5009642a92",
+    "username": "13200132000",
+    "phone": "13200132000",
+    "email": "",
+    "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "plan": "free",
+    "created_at": 1788687326.905157,
+    "daily_ai_usage": 0,
+    "daily_competitor_usage": 0,
+    "last_usage_date": "2026-09-06",
+    "bound_shops": [
+      {
+        "id": "b2cbdbae-e9c6-4758-8def-f95d9f010243",
+        "platform": "淘宝",
+        "shop_name": "测试店铺",
+        "auth_code": "test123",
+        "status": "active",
+        "bind_time": 1788687326.9131498,
+        "last_sync": 1788687326.9131503
+      }
+    ]
+  },
+  "13100131000": {
+    "user_id": "14397cef-8f4f-471a-93a7-6e7d1fb2fbac",
+    "username": "13100131000",
+    "phone": "13100131000",
+    "email": "",
+    "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "plan": "free",
+    "created_at": 1788687477.8896668,
+    "daily_ai_usage": 0,
+    "daily_competitor_usage": 0,
+    "last_usage_date": "2026-09-06",
+    "bound_shops": [
+      {
+        "id": "209359f5-fb36-494e-9ac4-27108ef568b1",
+        "platform": "淘宝",
+        "shop_name": "我的测试店铺",
+        "auth_code": "auth123456",
+        "status": "active",
+        "bind_time": 1788687478.4129891,
+        "last_sync": 1788687478.4129894
+      }
+    ]
   }
 }

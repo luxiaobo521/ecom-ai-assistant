@@ -53,8 +53,9 @@ button { font-family: inherit; cursor: pointer; border: none; outline: none; bac
 input, textarea, select { font-family: inherit; font-size: inherit; outline: none; }
 
 /* ==================== 页面切换 ==================== */
-.page { display: none; min-height: 100vh; }
-.page.active { display: block; }
+.page { display: none !important; min-height: 100vh; }
+.page.active { display: block !important; }
+.auth-page.active { display: flex !important; }
 
 /* ==================== 按钮 ==================== */
 .btn {

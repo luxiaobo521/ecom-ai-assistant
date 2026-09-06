@@ -1,4 +1,4 @@
-/* ============================================
+﻿/* ============================================
    电商AI运营助手 v5.0 - 前端交互逻辑
    ============================================ */
 
@@ -2558,4 +2558,33 @@ showPage = function(pageName) {
     setTimeout(initUserData, 300);
   }
 };
+
+
+
+// 关闭升级卡片
+function closeUpgradeCard() {
+  var card = document.getElementById('sidebarUpgradeCard');
+  if (card) {
+    var parent = card.parentElement;
+    if (parent) {
+      parent.classList.add('hidden');
+    }
+  }
+  // 保存到localStorage，下次不显示
+  try {
+    localStorage.setItem('upgradeCardHidden', 'true');
+  } catch(e) {}
+}
+
+// 页面加载时检查是否隐藏升级卡片
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    if (localStorage.getItem('upgradeCardHidden') === 'true') {
+      var card = document.getElementById('sidebarUpgradeCard');
+      if (card && card.parentElement) {
+        card.parentElement.classList.add('hidden');
+      }
+    }
+  } catch(e) {}
+});
 

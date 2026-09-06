@@ -1337,25 +1337,81 @@ function selectPlatform(el, name) {
 
 function confirmAddShop() {
   var name = document.getElementById('newShopName').value.trim();
+  var url = document.getElementById('newShopUrl').value.trim();
   if (!name) {
     showToast('error', '请输入店铺名称');
     return;
   }
-  closeModal('addShopModal');
-  showToast('success', '店铺「' + name + '」绑定成功');
-  document.getElementById('newShopName').value = '';
-  document.getElementById('newShopUrl').value = '';
+  // 获取选中的平台
+  var platform = '淘宝';
+  var selected = document.querySelector('#addShopModal [data-selected="true"], #addShopModal [style*="primary-600"]');
+  var allPlatforms = document.querySelectorAll('#addShopModal [onclick^="selectPlatform"]');
+  for (var i = 0; i < allPlatforms.length; i++) {
+    if (allPlatforms[i].dataset && allPlatforms[i].dataset.selected) {
+      platform = allPlatforms[i].dataset.selected;
+      break;
+    }
+  }
+
+  showToast('info', '正在绑定店铺...');
+  fetch('/api/bind-shop', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ platform: platform, shop_name: name, shop_url: url })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.success) {
+      closeModal('addShopModal');
+      showToast('success', '店铺「' + name + '」绑定成功');
+      document.getElementById('newShopName').value = '';
+      document.getElementById('newShopUrl').value = '';
+      // 重置平台选择
+      allPlatforms.forEach(function(item) {
+        item.style.border = '1px solid var(--gray-200)';
+        item.style.background = '#fff';
+        if (item.dataset) item.dataset.selected = '';
+      });
+      if (typeof loadShopList === 'function') loadShopList();
+    } else {
+      showToast('error', data.message || '绑定失败');
+    }
+  })
+  .catch(function() { showToast('error', '网络错误，请重试'); });
 }
 
 // ========== 个人中心 ==========
 function saveProfile() {
-  var nickname = document.getElementById('profileNickname').value.trim();
-  if (nickname && currentUser) {
-    currentUser.nickname = nickname;
-    localStorage.setItem('ecom_ai_user', JSON.stringify(currentUser));
-    updateUserUI();
+  var nickname = document.getElementById('profileNickname') ? document.getElementById('profileNickname').value.trim() : '';
+  var email = document.getElementById('profileEmail') ? document.getElementById('profileEmail').value.trim() : '';
+  var city = document.getElementById('profileCity') ? document.getElementById('profileCity').value.trim() : '';
+
+  if (!nickname) {
+    showToast('error', '昵称不能为空');
+    return;
   }
-  showToast('success', '个人信息已保存');
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showToast('error', '邮箱格式不正确');
+    return;
+  }
+
+  fetch('/api/update-profile', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nickname: nickname, email: email, city: city })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.success) {
+      if (currentUser) currentUser.nickname = data.nickname || nickname;
+      localStorage.setItem('ecom_ai_user', JSON.stringify(currentUser));
+      updateUserUI();
+      showToast('success', '个人信息已保存');
+    } else {
+      showToast('error', data.message || '保存失败');
+    }
+  })
+  .catch(function() { showToast('error', '网络错误，请重试'); });
 }
 
 // ========== 通知中心 ==========
@@ -1663,3 +1719,843 @@ function showContentPage(pageId) {
     window.scrollTo(0, 0);
   }
 }
+
+/* ==================== v7.0 真实API对接函数 ==================== */
+
+/* ---- 通用API请求封装 ---- */
+function apiRequest(url, method, data) {
+  var options = {
+    method: method || 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin'
+  };
+  if (data && method !== 'GET') {
+    options.body = JSON.stringify(data);
+  }
+  return fetch(url, options).then(function(res) { return res.json(); });
+}
+
+/* ---- 用户系统：修改个人信息 ---- */
+function saveProfile() {
+  var nickname = document.getElementById('profileNickname') ? document.getElementById('profileNickname').value : '';
+  var email = document.getElementById('profileEmail') ? document.getElementById('profileEmail').value : '';
+  var city = document.getElementById('profileCity') ? document.getElementById('profileCity').value : '';
+
+  if (!nickname) {
+    showToast('error', '昵称不能为空');
+    return;
+  }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showToast('error', '邮箱格式不正确');
+    return;
+  }
+
+  apiRequest('/api/update-profile', 'POST', { nickname: nickname, email: email, city: city })
+    .then(function(data) {
+      if (data.success) {
+        showToast('success', '个人信息已保存');
+        if (currentUser) currentUser.nickname = data.nickname || nickname;
+        updateUserUI();
+      } else {
+        showToast('error', data.message || '保存失败');
+      }
+    })
+    .catch(function() { showToast('error', '网络错误，请重试'); });
+}
+
+/* ---- 用户系统：修改密码 ---- */
+function submitChangePassword() {
+  var oldPwd = document.getElementById('oldPassword') ? document.getElementById('oldPassword').value : '';
+  var newPwd = document.getElementById('newPassword') ? document.getElementById('newPassword').value : '';
+  var confirmPwd = document.getElementById('confirmPassword') ? document.getElementById('confirmPassword').value : '';
+
+  if (!oldPwd || !newPwd || !confirmPwd) {
+    showToast('error', '请填写完整信息');
+    return;
+  }
+  if (newPwd !== confirmPwd) {
+    showToast('error', '两次新密码不一致');
+    return;
+  }
+  if (newPwd.length < 8) {
+    showToast('error', '新密码至少8位');
+    return;
+  }
+
+  apiRequest('/api/change-password', 'POST', { old_password: oldPwd, new_password: newPwd, confirm_password: confirmPwd })
+    .then(function(data) {
+      if (data.success) {
+        showToast('success', '密码修改成功，请重新登录');
+        setTimeout(function() { logout(); }, 1500);
+      } else {
+        showToast('error', data.message || '修改失败');
+      }
+    })
+    .catch(function() { showToast('error', '网络错误，请重试'); });
+}
+
+/* ---- 安全设置 ---- */
+function loadSecuritySettings() {
+  apiRequest('/api/security-settings', 'GET')
+    .then(function(data) {
+      if (data.success) {
+        var settings = data.settings || {};
+        var twoFactor = document.getElementById('twoFactorSwitch');
+        var loginAlert = document.getElementById('loginAlertSwitch');
+        if (twoFactor) twoFactor.checked = !!settings.two_factor;
+        if (loginAlert) loginAlert.checked = !!settings.login_alert;
+        var scoreEl = document.getElementById('securityScore');
+        if (scoreEl) scoreEl.textContent = data.security_score || 0;
+      }
+    })
+    .catch(function() {});
+}
+
+function saveSecuritySetting(key, value) {
+  var data = {};
+  data[key] = value;
+  apiRequest('/api/security-settings', 'POST', data)
+    .then(function(res) {
+      if (res.success) {
+        showToast('success', '设置已保存');
+        var scoreEl = document.getElementById('securityScore');
+        if (scoreEl) scoreEl.textContent = res.security_score || 0;
+      } else {
+        showToast('error', res.message || '保存失败');
+      }
+    })
+    .catch(function() { showToast('error', '网络错误'); });
+}
+
+/* ---- 设备管理 ---- */
+function loadDevices() {
+  apiRequest('/api/devices', 'GET')
+    .then(function(data) {
+      if (data.success) {
+        var container = document.getElementById('deviceList');
+        if (!container) return;
+        var html = '';
+        (data.devices || []).forEach(function(device) {
+          html += '<div class="device-item">' +
+            '<div style="display:flex;align-items:center;gap:12px;">' +
+            '<div style="width:40px;height:40px;background:var(--primary-50);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;">💻</div>' +
+            '<div>' +
+            '<div style="font-weight:500;font-size:14px;">' + escapeHtml(device.device || '未知设备') + (device.current ? ' <span class="tag tag-success" style="font-size:10px;">当前设备</span>' : '') + '</div>' +
+            '<div style="font-size:12px;color:var(--gray-400);margin-top:2px;">IP: ' + escapeHtml(device.ip || '未知') + ' · ' + new Date(device.last_active * 1000).toLocaleString('zh-CN') + '</div>' +
+            '</div></div>' +
+            (device.current ? '' : '<button class="btn btn-secondary btn-sm" onclick="logoutDevice(\'' + device.id + '\')">下线</button>') +
+            '</div>';
+        });
+        container.innerHTML = html || '<p style="text-align:center;color:var(--gray-400);padding:20px;">暂无登录设备</p>';
+      }
+    })
+    .catch(function() {});
+}
+
+function logoutDevice(deviceId) {
+  if (!confirm('确定要下线该设备吗？')) return;
+  apiRequest('/api/device-logout', 'POST', { device_id: deviceId })
+    .then(function(data) {
+      if (data.success) {
+        showToast('success', '设备已下线');
+        loadDevices();
+      } else {
+        showToast('error', data.message || '操作失败');
+      }
+    })
+    .catch(function() { showToast('error', '网络错误'); });
+}
+
+/* ---- 登录记录 ---- */
+function loadLoginHistory() {
+  apiRequest('/api/login-history', 'GET')
+    .then(function(data) {
+      if (data.success) {
+        var container = document.getElementById('loginHistoryList');
+        if (!container) return;
+        var html = '';
+        (data.history || []).forEach(function(record) {
+          var statusClass = record.status === 'success' ? 'success' : 'danger';
+          var statusText = record.status === 'success' ? '成功' : '失败';
+          html += '<div class="login-record">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+            '<div><span style="font-size:14px;font-weight:500;">' + escapeHtml(record.device || '未知') + '</span>' +
+            '<span style="font-size:12px;color:var(--gray-400);margin-left:8px;">IP: ' + escapeHtml(record.ip || '未知') + '</span></div>' +
+            '<span class="tag tag-' + statusClass + '" style="font-size:11px;">' + statusText + '</span>' +
+            '</div>' +
+            '<div style="font-size:12px;color:var(--gray-400);margin-top:4px;">' + new Date(record.time * 1000).toLocaleString('zh-CN') + '</div>' +
+            '</div>';
+        });
+        container.innerHTML = html || '<p style="text-align:center;color:var(--gray-400);padding:20px;">暂无登录记录</p>';
+      }
+    })
+    .catch(function() {});
+}
+
+/* ---- AI生成历史 ---- */
+function loadAiHistory(type, page) {
+  var url = '/api/ai-history?page=' + (page || 1);
+  if (type && type !== 'all') url += '&type=' + type;
+  apiRequest(url, 'GET')
+    .then(function(data) {
+      if (data.success) {
+        renderAiHistory(data.history || []);
+      }
+    })
+    .catch(function() {});
+}
+
+function renderAiHistory(history) {
+  var container = document.getElementById('historyList');
+  if (!container) return;
+  if (!history || history.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--gray-400);"><div style="font-size:48px;margin-bottom:16px;">📭</div><p>暂无生成记录</p><p style="font-size:12px;margin-top:8px;">使用AI功能后，记录会显示在这里</p></div>';
+    return;
+  }
+  var typeNames = { title: '标题生成', detail: '详情页', service: '客服话术', competitor: '竞品分析', diagnosis: '运营诊断', report: '报表生成' };
+  var html = '';
+  history.forEach(function(item) {
+    var typeName = typeNames[item.type] || item.type;
+    var preview = (item.result || '').substring(0, 80);
+    html += '<div class="history-card">' +
+      '<div class="history-card-header">' +
+      '<span class="tag tag-primary" style="font-size:11px;">' + typeName + '</span>' +
+      '<span style="font-size:12px;color:var(--gray-400);">' + new Date(item.created_at * 1000).toLocaleString('zh-CN') + '</span>' +
+      '</div>' +
+      '<div class="history-card-title">' + escapeHtml(item.title || '未命名') + '</div>' +
+      '<div class="history-card-preview">' + escapeHtml(preview) + '...</div>' +
+      '<div class="history-card-footer">' +
+      '<button class="btn btn-text btn-sm" onclick="copyText(\'' + escapeHtml((item.result || '').replace(/'/g, "\\'")) + '\')">📋 复制</button>' +
+      '<button class="btn btn-text btn-sm" onclick="toggleHistoryFavorite(\'' + item.id + '\', this)">' + (item.favorite ? '⭐ 已收藏' : '☆ 收藏') + '</button>' +
+      '<button class="btn btn-text btn-sm" onclick="deleteHistoryItem(\'' + item.id + '\')">🗑️ 删除</button>' +
+      '</div></div>';
+  });
+  container.innerHTML = html;
+}
+
+function toggleHistoryFavorite(id, btn) {
+  apiRequest('/api/ai-history/favorite', 'POST', { id: id })
+    .then(function(data) {
+      if (data.success) {
+        if (btn) btn.innerHTML = data.favorite ? '⭐ 已收藏' : '☆ 收藏';
+        showToast('success', data.favorite ? '已收藏' : '已取消收藏');
+      }
+    })
+    .catch(function() {});
+}
+
+function deleteHistoryItem(id) {
+  if (!confirm('确定要删除这条记录吗？')) return;
+  apiRequest('/api/ai-history/' + id, 'DELETE')
+    .then(function(data) {
+      if (data.success) {
+        showToast('success', '已删除');
+        loadAiHistory(document.getElementById('historyTypeFilter') ? document.getElementById('historyTypeFilter').value : '');
+      }
+    })
+    .catch(function() {});
+}
+
+/* ---- 店铺绑定 ---- */
+function loadShopList() {
+  apiRequest('/api/shop-list', 'GET')
+    .then(function(data) {
+      if (data.success) {
+        renderShopList(data.shops || []);
+      }
+    })
+    .catch(function() {});
+}
+
+function renderShopList(shops) {
+  var container = document.getElementById('shopList');
+  if (!container) return;
+  if (!shops || shops.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--gray-400);"><div style="font-size:48px;margin-bottom:16px;">🏪</div><p>暂无绑定店铺</p><button class="btn btn-primary" onclick="showAddShopModal()" style="margin-top:16px;">立即绑定</button></div>';
+    return;
+  }
+  var platformIcons = { taobao: '🛒', tmall: '🛍️', jd: '📦', pinduoduo: '🍊', douyin: '🎵', xiaohongshu: '📕' };
+  var html = '';
+  shops.forEach(function(shop) {
+    var icon = platformIcons[shop.platform] || '🏪';
+    html += '<div class="shop-card">' +
+      '<div style="display:flex;align-items:center;gap:16px;">' +
+      '<div style="width:56px;height:56px;background:var(--primary-50);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px;">' + icon + '</div>' +
+      '<div style="flex:1;">' +
+      '<div style="font-weight:600;font-size:16px;">' + escapeHtml(shop.shop_name) + '</div>' +
+      '<div style="font-size:13px;color:var(--gray-500);margin-top:4px;">' + escapeHtml(shop.platform) + ' · 绑定于 ' + new Date(shop.bind_time * 1000).toLocaleDateString('zh-CN') + '</div>' +
+      '<div style="margin-top:8px;"><span class="tag tag-success" style="font-size:11px;">● 已连接</span>' +
+      '<span style="font-size:11px;color:var(--gray-400);margin-left:8px;">最后同步: ' + new Date((shop.last_sync || 0) * 1000).toLocaleString('zh-CN') + '</span></div>' +
+      '</div></div>' +
+      '<div style="display:flex;gap:8px;">' +
+      '<button class="btn btn-secondary btn-sm" onclick="syncShop(\'' + shop.id + '\')">🔄 同步</button>' +
+      '<button class="btn btn-text btn-sm" style="color:var(--danger-500);" onclick="unbindShop(\'' + shop.id + '\', \'' + escapeHtml(shop.shop_name) + '\')">解绑</button>' +
+      '</div></div>';
+  });
+  container.innerHTML = html;
+}
+
+function showAddShopModal() {
+  var modal = document.getElementById('addShopModal');
+  if (modal) modal.classList.add('active');
+}
+
+function submitBindShop() {
+  var platform = document.getElementById('bindPlatform') ? document.getElementById('bindPlatform').value : '';
+  var shopName = document.getElementById('bindShopName') ? document.getElementById('bindShopName').value : '';
+  var authCode = document.getElementById('bindAuthCode') ? document.getElementById('bindAuthCode').value : '';
+
+  if (!platform || !shopName) {
+    showToast('error', '请填写平台和店铺名称');
+    return;
+  }
+
+  apiRequest('/api/bind-shop', 'POST', { platform: platform, shop_name: shopName, auth_code: authCode })
+    .then(function(data) {
+      if (data.success) {
+        showToast('success', '店铺绑定成功');
+        closeModal('addShopModal');
+        loadShopList();
+      } else {
+        showToast('error', data.message || '绑定失败');
+      }
+    })
+    .catch(function() { showToast('error', '网络错误'); });
+}
+
+function unbindShop(shopId, shopName) {
+  if (!confirm('确定要解绑店铺「' + shopName + '」吗？解绑后将无法查看该店铺数据。')) return;
+  apiRequest('/api/unbind-shop', 'POST', { shop_id: shopId })
+    .then(function(data) {
+      if (data.success) {
+        showToast('success', '店铺已解绑');
+        loadShopList();
+      } else {
+        showToast('error', data.message || '操作失败');
+      }
+    })
+    .catch(function() { showToast('error', '网络错误'); });
+}
+
+function syncShop(shopId) {
+  showToast('info', '正在同步店铺数据...');
+  apiRequest('/api/shop-sync', 'POST', { shop_id: shopId })
+    .then(function(data) {
+      if (data.success) {
+        showToast('success', '数据同步成功');
+        loadShopList();
+      } else {
+        showToast('error', data.message || '同步失败');
+      }
+    })
+    .catch(function() { showToast('error', '网络错误'); });
+}
+
+/* ---- 会员支付 ---- */
+function createOrder(plan, period) {
+  var couponId = document.getElementById('selectedCouponId') ? document.getElementById('selectedCouponId').value : '';
+  apiRequest('/api/upgrade-plan', 'POST', { plan: plan, period: period, coupon_id: couponId })
+    .then(function(data) {
+      if (data.success && data.order) {
+        showPaymentModal(data.order);
+      } else {
+        showToast('error', data.message || '创建订单失败');
+      }
+    })
+    .catch(function() { showToast('error', '网络错误'); });
+}
+
+function showPaymentModal(order) {
+  var modal = document.getElementById('paymentModal');
+  if (!modal) {
+    showToast('info', '订单创建成功，订单号：' + order.id);
+    return;
+  }
+  var orderInfo = document.getElementById('paymentOrderInfo');
+  if (orderInfo) {
+    orderInfo.innerHTML = '<div style="text-align:center;padding:20px;">' +
+      '<div style="font-size:18px;font-weight:600;margin-bottom:8px;">' + escapeHtml(order.plan_name) + '</div>' +
+      '<div style="font-size:14px;color:var(--gray-500);margin-bottom:16px;">订单号：' + order.id + '</div>' +
+      '<div style="font-size:36px;font-weight:700;color:var(--primary-600);">¥' + order.final_price + '</div>' +
+      (order.discount > 0 ? '<div style="font-size:13px;color:var(--success-600);margin-top:8px;">已优惠 ¥' + order.discount + '</div>' : '') +
+      '</div>';
+  }
+  document.getElementById('currentOrderId').value = order.id;
+  modal.classList.add('active');
+}
+
+function payOrder(method) {
+  var orderId = document.getElementById('currentOrderId') ? document.getElementById('currentOrderId').value : '';
+  if (!orderId) {
+    showToast('error', '订单信息缺失');
+    return;
+  }
+  showToast('info', '正在支付...');
+  apiRequest('/api/pay/' + orderId, 'POST', { payment_method: method })
+    .then(function(data) {
+      if (data.success) {
+        showToast('success', '支付成功，会员已开通！');
+        closeModal('paymentModal');
+        if (currentUser) currentUser.plan = data.order.plan;
+        updateUserUI();
+        setTimeout(function() { switchAdminPage('membership', document.querySelectorAll('.sidebar-nav-item')[10]); }, 500);
+      } else {
+        showToast('error', data.message || '支付失败');
+      }
+    })
+    .catch(function() { showToast('error', '网络错误'); });
+}
+
+function loadOrders() {
+  apiRequest('/api/orders', 'GET')
+    .then(function(data) {
+      if (data.success) {
+        renderOrders(data.orders || []);
+      }
+    })
+    .catch(function() {});
+}
+
+function renderOrders(orders) {
+  var container = document.getElementById('orderList');
+  if (!container) return;
+  if (!orders || orders.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--gray-400);"><div style="font-size:48px;margin-bottom:16px;">📋</div><p>暂无订单记录</p></div>';
+    return;
+  }
+  var statusMap = { pending: { text: '待支付', class: 'warning' }, paid: { text: '已支付', class: 'success' }, refunded: { text: '已退款', class: 'gray' } };
+  var html = '<table style="width:100%;border-collapse:collapse;"><thead><tr style="border-bottom:2px solid var(--gray-100);">' +
+    '<th style="text-align:left;padding:12px;font-size:13px;color:var(--gray-500);">订单号</th>' +
+    '<th style="text-align:left;padding:12px;font-size:13px;color:var(--gray-500);">套餐</th>' +
+    '<th style="text-align:left;padding:12px;font-size:13px;color:var(--gray-500);">金额</th>' +
+    '<th style="text-align:left;padding:12px;font-size:13px;color:var(--gray-500);">状态</th>' +
+    '<th style="text-align:left;padding:12px;font-size:13px;color:var(--gray-500);">时间</th>' +
+    '<th style="text-align:left;padding:12px;font-size:13px;color:var(--gray-500);">操作</th></tr></thead><tbody>';
+  orders.forEach(function(order) {
+    var status = statusMap[order.status] || { text: order.status, class: 'gray' };
+    html += '<tr style="border-bottom:1px solid var(--gray-100);">' +
+      '<td style="padding:14px 12px;font-size:13px;font-family:monospace;">' + order.id + '</td>' +
+      '<td style="padding:14px 12px;font-size:13px;">' + escapeHtml(order.plan_name) + ' (' + (order.period === 'yearly' ? '年付' : '月付') + ')</td>' +
+      '<td style="padding:14px 12px;font-size:14px;font-weight:600;">¥' + order.final_price + '</td>' +
+      '<td style="padding:14px 12px;"><span class="tag tag-' + status.class + '" style="font-size:11px;">' + status.text + '</span></td>' +
+      '<td style="padding:14px 12px;font-size:12px;color:var(--gray-400);">' + new Date(order.created_at * 1000).toLocaleString('zh-CN') + '</td>' +
+      '<td style="padding:14px 12px;">' +
+      (order.status === 'pending' ? '<button class="btn btn-primary btn-sm" onclick="payOrder(\'wechat\')">去支付</button>' : '') +
+      (order.status === 'paid' ? '<button class="btn btn-secondary btn-sm" onclick="applyInvoice(\'' + order.id + '\')">开发票</button>' : '') +
+      '</td></tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+/* ---- 发票管理 ---- */
+function applyInvoice(orderId) {
+  var modal = document.getElementById('invoiceModal');
+  if (modal) {
+    document.getElementById('invoiceOrderId').value = orderId;
+    modal.classList.add('active');
+  }
+}
+
+function submitInvoice() {
+  var orderId = document.getElementById('invoiceOrderId') ? document.getElementById('invoiceOrderId').value : '';
+  var type = document.getElementById('invoiceType') ? document.getElementById('invoiceType').value : 'personal';
+  var title = document.getElementById('invoiceTitle') ? document.getElementById('invoiceTitle').value : '';
+  var taxNumber = document.getElementById('invoiceTaxNumber') ? document.getElementById('invoiceTaxNumber').value : '';
+  var email = document.getElementById('invoiceEmail') ? document.getElementById('invoiceEmail').value : '';
+
+  if (!title || !email) {
+    showToast('error', '请填写发票抬头和邮箱');
+    return;
+  }
+
+  apiRequest('/api/invoice', 'POST', { order_id: orderId, type: type, title: title, tax_number: taxNumber, email: email })
+    .then(function(data) {
+      if (data.success) {
+        showToast('success', '发票申请已提交');
+        closeModal('invoiceModal');
+        loadInvoices();
+      } else {
+        showToast('error', data.message || '提交失败');
+      }
+    })
+    .catch(function() { showToast('error', '网络错误'); });
+}
+
+function loadInvoices() {
+  apiRequest('/api/invoices', 'GET')
+    .then(function(data) {
+      if (data.success) {
+        var container = document.getElementById('invoiceList');
+        if (!container) return;
+        if (!data.invoices || data.invoices.length === 0) {
+          container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray-400);">暂无发票记录</div>';
+          return;
+        }
+        var statusMap = { processing: '处理中', done: '已开具', failed: '开具失败' };
+        var html = '';
+        data.invoices.forEach(function(inv) {
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--gray-100);">' +
+            '<div><div style="font-weight:500;font-size:14px;">' + escapeHtml(inv.title) + '</div>' +
+            '<div style="font-size:12px;color:var(--gray-400);margin-top:4px;">订单号: ' + inv.order_id + ' · 金额: ¥' + inv.amount + '</div></div>' +
+            '<span class="tag tag-' + (inv.status === 'done' ? 'success' : inv.status === 'processing' ? 'warning' : 'danger') + '" style="font-size:11px;">' + (statusMap[inv.status] || inv.status) + '</span>' +
+            '</div>';
+        });
+        container.innerHTML = html;
+      }
+    })
+    .catch(function() {});
+}
+
+/* ---- 优惠券 ---- */
+function loadCoupons(status) {
+  var url = '/api/coupons';
+  if (status) url += '?status=' + status;
+  apiRequest(url, 'GET')
+    .then(function(data) {
+      if (data.success) {
+        renderCoupons(data.coupons || []);
+      }
+    })
+    .catch(function() {});
+}
+
+function renderCoupons(coupons) {
+  var container = document.getElementById('couponList');
+  if (!container) return;
+  if (!coupons || coupons.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--gray-400);"><div style="font-size:48px;margin-bottom:16px;">🎫</div><p>暂无优惠券</p></div>';
+    return;
+  }
+  var html = '<div class="coupon-grid">';
+  coupons.forEach(function(coupon) {
+    var isExpired = coupon.expire_at && (coupon.expire_at * 1000) < Date.now();
+    var isUsed = coupon.status === 'used';
+    var disabled = isExpired || isUsed;
+    html += '<div class="coupon-card' + (disabled ? ' disabled' : '') + '">' +
+      '<div class="coupon-left">' +
+      '<div class="coupon-amount">¥<span>' + coupon.amount + '</span></div>' +
+      '<div class="coupon-condition">满' + coupon.min_amount + '可用</div>' +
+      '</div>' +
+      '<div class="coupon-right">' +
+      '<div class="coupon-name">' + escapeHtml(coupon.name) + '</div>' +
+      '<div class="coupon-scope">' + escapeHtml(coupon.scope || '全部套餐') + '</div>' +
+      '<div class="coupon-expire">' + (isExpired ? '已过期' : isUsed ? '已使用' : '有效期至 ' + new Date(coupon.expire_at * 1000).toLocaleDateString('zh-CN')) + '</div>' +
+      (disabled ? '' : '<button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="useCoupon(\'' + coupon.id + '\')">立即使用</button>') +
+      '</div></div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function useCoupon(couponId) {
+  document.getElementById('selectedCouponId').value = couponId;
+  showToast('success', '优惠券已选择，请在升级会员时使用');
+  switchAdminPage('membership', document.querySelectorAll('.sidebar-nav-item')[10]);
+}
+
+/* ---- 消息通知 ---- */
+function loadNotifications(type) {
+  var url = '/api/notifications';
+  if (type && type !== 'all') url += '?type=' + type;
+  apiRequest(url, 'GET')
+    .then(function(data) {
+      if (data.success) {
+        renderNotifications(data.notifications || []);
+        updateNotificationBadge(data.unread_count || 0);
+      }
+    })
+    .catch(function() {});
+}
+
+function renderNotifications(notifications) {
+  var container = document.getElementById('notificationList');
+  if (!container) return;
+  if (!notifications || notifications.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--gray-400);"><div style="font-size:48px;margin-bottom:16px;">🔔</div><p>暂无通知</p></div>';
+    return;
+  }
+  var typeIcons = { system: '🔔', activity: '🎁', usage: '📊', security: '🔐' };
+  var html = '';
+  notifications.forEach(function(n) {
+    html += '<div class="notification-item' + (n.read ? '' : ' unread') + '" onclick="markNotificationRead(\'' + n.id + '\')">' +
+      '<div class="notification-icon">' + (typeIcons[n.type] || '📢') + '</div>' +
+      '<div class="notification-content">' +
+      '<div class="notification-title">' + escapeHtml(n.title) + (n.read ? '' : '<span class="notification-dot"></span>') + '</div>' +
+      '<div class="notification-desc">' + escapeHtml(n.content) + '</div>' +
+      '<div class="notification-time">' + new Date(n.created_at * 1000).toLocaleString('zh-CN') + '</div>' +
+      '</div></div>';
+  });
+  container.innerHTML = html;
+}
+
+function markNotificationRead(id) {
+  apiRequest('/api/notifications/read', 'POST', { id: id })
+    .then(function() { loadNotifications(document.getElementById('notificationTab') ? document.getElementById('notificationTab').value : ''); })
+    .catch(function() {});
+}
+
+function markAllNotificationsReadReal() {
+  apiRequest('/api/notifications/read', 'POST', { all: true })
+    .then(function(data) {
+      if (data.success) {
+        showToast('success', '全部标记为已读');
+        loadNotifications();
+      }
+    })
+    .catch(function() {});
+}
+
+function updateNotificationBadge(count) {
+  var badge = document.querySelector('.topbar-notification-dot');
+  if (badge) {
+    badge.style.display = count > 0 ? 'block' : 'none';
+    badge.textContent = count > 99 ? '99+' : count;
+  }
+}
+
+/* ---- 任务中心 ---- */
+function loadTasks(status) {
+  apiRequest('/api/tasks' + (status ? '?status=' + status : ''), 'GET')
+    .then(function(data) {
+      if (data.success) {
+        renderTasks(data.tasks || []);
+      }
+    })
+    .catch(function() {});
+}
+
+function renderTasks(tasks) {
+  var container = document.getElementById('taskList');
+  if (!container) return;
+  if (!tasks || tasks.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--gray-400);"><div style="font-size:48px;margin-bottom:16px;">⚡</div><p>暂无任务</p><p style="font-size:12px;margin-top:8px;">使用批量生成等功能时，任务会显示在这里</p></div>';
+    return;
+  }
+  var statusMap = { pending: '等待中', running: '进行中', completed: '已完成', failed: '失败' };
+  var statusClass = { pending: 'gray', running: 'primary', completed: 'success', failed: 'danger' };
+  var html = '';
+  tasks.forEach(function(task) {
+    html += '<div class="task-card">' +
+      '<div class="task-card-header">' +
+      '<span class="tag tag-' + (statusClass[task.status] || 'gray') + '" style="font-size:11px;">' + (statusMap[task.status] || task.status) + '</span>' +
+      '<span style="font-size:12px;color:var(--gray-400);">' + new Date(task.created_at * 1000).toLocaleString('zh-CN') + '</span>' +
+      '</div>' +
+      '<div class="task-card-title">' + escapeHtml(task.title || '未命名任务') + '</div>' +
+      (task.status === 'running' ? '<div class="task-progress"><div class="task-progress-bar" style="width:' + (task.progress || 50) + '%"></div></div>' : '') +
+      '<div style="font-size:12px;color:var(--gray-400);margin-top:8px;">' + escapeHtml(task.description || '') + '</div>' +
+      '</div>';
+  });
+  container.innerHTML = html;
+}
+
+/* ---- 模板市场 ---- */
+function loadTemplates(category) {
+  var url = '/api/templates';
+  if (category && category !== 'all') url += '?category=' + category;
+  apiRequest(url, 'GET')
+    .then(function(data) {
+      if (data.success) {
+        renderTemplates(data.templates || []);
+      }
+    })
+    .catch(function() {});
+}
+
+function renderTemplates(templates) {
+  var container = document.getElementById('templateGrid');
+  if (!container) return;
+  var categoryColors = { title: 'linear-gradient(135deg,#DBEAFE,#BFDBFE)', detail: 'linear-gradient(135deg,#FCE7F3,#FBCFE8)', service: 'linear-gradient(135deg,#CFFAFE,#A5F3FC)', report: 'linear-gradient(135deg,#FEF3C7,#FDE68A)' };
+  var categoryIcons = { title: '✍️', detail: '📄', service: '💬', report: '📊' };
+  var html = '';
+  templates.forEach(function(t) {
+    html += '<div class="template-card">' +
+      '<div class="template-cover" style="background:' + (categoryColors[t.category] || 'var(--gray-100)') + ';">' +
+      '<span style="font-size:36px;">' + (categoryIcons[t.category] || '📋') + '</span>' +
+      '<span style="font-size:12px;color:var(--gray-500);margin-top:8px;">' + t.category + '</span>' +
+      '</div>' +
+      '<div class="template-card-body">' +
+      '<div class="template-card-title">' + escapeHtml(t.name) + '</div>' +
+      '<div class="template-card-desc">' + escapeHtml(t.desc) + '</div>' +
+      '<div class="template-card-tags">' + (t.tags || []).map(function(tag) { return '<span class="tag tag-gray" style="font-size:10px;">' + tag + '</span>'; }).join('') + '</div>' +
+      '<div class="template-card-footer">' +
+      '<span style="font-size:12px;color:var(--gray-400);">🔥 ' + t.usage + '次使用 · ⭐ ' + t.rating + '</span>' +
+      '<button class="btn btn-primary btn-sm" onclick="useTemplateReal(\'' + t.id + '\')">使用</button>' +
+      '</div></div></div>';
+  });
+  container.innerHTML = html;
+}
+
+function useTemplateReal(templateId) {
+  apiRequest('/api/templates/use', 'POST', { template_id: templateId })
+    .then(function(data) {
+      if (data.success && data.template) {
+        showToast('success', '模板已加载');
+        var t = data.template;
+        if (t.category === 'title') {
+          switchAdminPage('title-gen', document.querySelectorAll('.sidebar-nav-item')[1]);
+          setTimeout(function() {
+            var sp = document.getElementById('titleSellingPoints');
+            if (sp) sp.value = t.content || '';
+          }, 300);
+        } else if (t.category === 'detail') {
+          switchAdminPage('detail-gen', document.querySelectorAll('.sidebar-nav-item')[2]);
+        } else if (t.category === 'service') {
+          switchAdminPage('service-gen', document.querySelectorAll('.sidebar-nav-item')[3]);
+        }
+      } else {
+        showToast('error', data.message || '加载失败');
+      }
+    })
+    .catch(function() { showToast('error', '网络错误'); });
+}
+
+/* ---- 邀请好友 ---- */
+function loadInviteInfo() {
+  apiRequest('/api/invite/info', 'GET')
+    .then(function(data) {
+      if (data.success) {
+        var codeEl = document.getElementById('inviteCode');
+        var linkEl = document.getElementById('inviteLink');
+        var totalEl = document.getElementById('inviteTotal');
+        var rewardEl = document.getElementById('inviteReward');
+        if (codeEl) codeEl.textContent = data.invite_code || '';
+        if (linkEl) linkEl.textContent = data.invite_link || '';
+        if (totalEl) totalEl.textContent = data.total_invited || 0;
+        if (rewardEl) rewardEl.textContent = '¥' + (data.total_reward || 0);
+        renderInviteList(data.invitations || []);
+      }
+    })
+    .catch(function() {});
+}
+
+function renderInviteList(invitations) {
+  var container = document.getElementById('inviteList');
+  if (!container) return;
+  if (!invitations || invitations.length === 0) {
+    container.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--gray-400);">暂无邀请记录</td></tr>';
+    return;
+  }
+  var html = '';
+  invitations.forEach(function(inv) {
+    html += '<tr style="border-bottom:1px solid var(--gray-100);">' +
+      '<td style="padding:12px;font-size:13px;">' + escapeHtml(inv.phone || '未知用户') + '</td>' +
+      '<td style="padding:12px;font-size:13px;">' + new Date((inv.registered_at || 0) * 1000).toLocaleDateString('zh-CN') + '</td>' +
+      '<td style="padding:12px;font-size:13px;"><span class="tag tag-' + (inv.status === 'paid' ? 'success' : 'gray') + '" style="font-size:11px;">' + (inv.status === 'paid' ? '已付费' : '已注册') + '</span></td>' +
+      '<td style="padding:12px;font-size:13px;color:var(--success-600);font-weight:600;">' + (inv.reward ? '¥' + inv.reward : '¥0') + '</td></tr>';
+  });
+  container.innerHTML = html;
+}
+
+function copyInviteLink() {
+  var link = document.getElementById('inviteLink') ? document.getElementById('inviteLink').textContent : '';
+  if (link) {
+    copyToClipboard(link);
+    showToast('success', '邀请链接已复制');
+  }
+}
+
+/* ---- 意见反馈 ---- */
+function submitFeedbackReal() {
+  var type = document.querySelector('input[name="feedbackType"]:checked') ? document.querySelector('input[name="feedbackType"]:checked').value : '';
+  var content = document.getElementById('feedbackContent') ? document.getElementById('feedbackContent').value : '';
+  var contact = document.getElementById('feedbackContact') ? document.getElementById('feedbackContact').value : '';
+
+  if (!type) {
+    showToast('error', '请选择反馈类型');
+    return;
+  }
+  if (!content || content.length < 5) {
+    showToast('error', '请输入至少5个字的反馈内容');
+    return;
+  }
+
+  apiRequest('/api/feedback', 'POST', { type: type, content: content, contact: contact })
+    .then(function(data) {
+      if (data.success) {
+        showToast('success', '反馈提交成功，感谢您的建议！');
+        document.getElementById('feedbackContent').value = '';
+        document.getElementById('feedbackContact').value = '';
+        loadMyFeedbacks();
+      } else {
+        showToast('error', data.message || '提交失败');
+      }
+    })
+    .catch(function() { showToast('error', '网络错误'); });
+}
+
+function loadMyFeedbacks() {
+  apiRequest('/api/feedbacks', 'GET')
+    .then(function(data) {
+      if (data.success) {
+        var container = document.getElementById('myFeedbackList');
+        if (!container) return;
+        if (!data.feedbacks || data.feedbacks.length === 0) {
+          container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--gray-400);">暂无反馈记录</div>';
+          return;
+        }
+        var typeMap = { bug: 'Bug反馈', feature: '功能建议', experience: '体验问题', other: '其他' };
+        var statusMap = { pending: '处理中', replied: '已回复', closed: '已关闭' };
+        var html = '';
+        data.feedbacks.forEach(function(fb) {
+          html += '<div class="my-feedback-item">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+            '<span class="tag tag-primary" style="font-size:11px;">' + (typeMap[fb.type] || fb.type) + '</span>' +
+            '<span class="tag tag-' + (fb.status === 'replied' ? 'success' : 'warning') + '" style="font-size:11px;">' + (statusMap[fb.status] || fb.status) + '</span>' +
+            '</div>' +
+            '<div style="font-size:14px;margin-top:8px;line-height:1.6;">' + escapeHtml(fb.content) + '</div>' +
+            (fb.reply ? '<div class="feedback-reply" style="margin-top:12px;padding:12px;background:var(--primary-50);border-radius:8px;font-size:13px;"><strong style="color:var(--primary-600);">官方回复：</strong>' + escapeHtml(fb.reply) + '</div>' : '') +
+            '<div style="font-size:12px;color:var(--gray-400);margin-top:8px;">' + new Date(fb.created_at * 1000).toLocaleString('zh-CN') + '</div>' +
+            '</div>';
+        });
+        container.innerHTML = html;
+      }
+    })
+    .catch(function() {});
+}
+
+/* ---- 功能投票 ---- */
+function voteFeatureReal(featureId, btn) {
+  apiRequest('/api/vote', 'POST', { feature_id: featureId })
+    .then(function(data) {
+      if (data.success) {
+        showToast('success', '投票成功，感谢您的支持！');
+        if (btn) {
+          btn.classList.remove('btn-primary');
+          btn.classList.add('btn-secondary');
+          btn.textContent = '已投票';
+          btn.disabled = true;
+        }
+      } else {
+        showToast('error', data.message || '投票失败');
+      }
+    })
+    .catch(function() { showToast('error', '网络错误'); });
+}
+
+/* ---- 页面加载时初始化数据 ---- */
+function initUserData() {
+  if (!currentUser) return;
+  loadNotifications();
+  loadAiHistory();
+  loadShopList();
+  loadOrders();
+  loadCoupons();
+  loadTemplates();
+  loadInviteInfo();
+  loadMyFeedbacks();
+  loadSecuritySettings();
+  loadDevices();
+  loadLoginHistory();
+  loadTasks();
+}
+
+/* 覆盖原有的showPage，进入dashboard时加载用户数据 */
+var originalShowPage = showPage;
+showPage = function(pageName) {
+  originalShowPage(pageName);
+  if (pageName === 'dashboard' && currentUser) {
+    setTimeout(initUserData, 300);
+  }
+};
+

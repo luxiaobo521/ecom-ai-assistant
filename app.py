@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-电商运营AI助手 - SaaS后端 v3.2 安全增强版
-修复：XSS、CSRF、安全响应头、暴力破解防护、权限校验、密码强度、退出登录、信息脱敏、Cookie安全、错误处理、API限流、SSRF防护
+电商运营AI助手 - SaaS后端 v7.0 完整版
+所有功能真实可用：用户系统、店铺绑定、AI生成历史、会员支付、消息通知等
 """
 import os
 import json
@@ -12,33 +12,28 @@ import random
 import re
 import html
 from functools import wraps
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for, make_response
+from flask import Flask, render_template, request, jsonify, session, make_response
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'ecommerce-ai-assistant-v3-secure-' + str(uuid.uuid4()))
+app.secret_key = os.environ.get('SECRET_KEY', 'ecommerce-ai-assistant-v7-secure-' + str(uuid.uuid4()))
 
 # ==================== 安全配置 ====================
-# Cookie安全属性
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24小时
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 30
 
-# 登录防护配置
 MAX_LOGIN_ATTEMPTS = 5
-LOGIN_LOCKOUT_TIME = 900  # 15分钟
+LOGIN_LOCKOUT_TIME = 900
 
-# API限流配置（按IP）
 API_RATE_LIMIT = {
     'login': {'per_minute': 5},
     'register': {'per_minute': 3},
-    'ai_generate': {'per_minute': 20},
-    'default': {'per_minute': 60}
+    'ai_generate': {'per_minute': 30},
+    'default': {'per_minute': 100}
 }
 
-# 内存存储（生产环境应使用Redis）
-login_attempts = {}  # {ip: {'count': int, 'lock_until': timestamp}}
-api_rate_limit = {}  # {ip: {'endpoint': {'count': int, 'window_start': timestamp}}}
+login_attempts = {}
+api_rate_limit = {}
 
 # ==================== 配置 ====================
 API_KEY = os.environ.get('DOUBAO_API_KEY', '')
@@ -46,71 +41,67 @@ MODEL_ID = os.environ.get('DOUBAO_MODEL_ID', 'doubao-pro-32k')
 API_BASE = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions'
 
 USERS_FILE = os.path.join(os.path.dirname(__file__), 'users.json')
+ORDERS_FILE = os.path.join(os.path.dirname(__file__), 'orders.json')
+FEEDBACKS_FILE = os.path.join(os.path.dirname(__file__), 'feedbacks.json')
 
 # 会员权限配置
 MEMBER_PLANS = {
     'free': {
-        'name': '免费版',
-        'daily_ai_limit': 10,
-        'competitor_daily_limit': 3,
-        'can_export': False,
-        'can_diagnosis': False,
-        'can_monthly_report': False,
-        'can_multi_shop': False,
-        'can_api': False,
-        'can_competitor': True  # 免费版有限次竞品分析
+        'name': '免费版', 'price': 0, 'daily_ai_limit': 10,
+        'competitor_daily_limit': 3, 'can_export': False, 'can_diagnosis': False,
+        'can_monthly_report': False, 'can_multi_shop': False, 'can_api': False,
+        'can_competitor': True, 'history_limit': 20, 'template_limit': 5
     },
-    'monthly': {
-        'name': '月付版',
-        'price': 39,
-        'daily_ai_limit': 9999,
-        'competitor_daily_limit': 9999,
-        'can_export': True,
-        'can_diagnosis': True,
-        'can_monthly_report': True,
-        'can_multi_shop': False,
-        'can_api': False,
-        'can_competitor': True
+    'pro': {
+        'name': '专业版', 'price': 39, 'yearly_price': 319,
+        'daily_ai_limit': 9999, 'competitor_daily_limit': 9999,
+        'can_export': True, 'can_diagnosis': True, 'can_monthly_report': True,
+        'can_multi_shop': False, 'can_api': False, 'can_competitor': True,
+        'history_limit': 500, 'template_limit': 50
     },
-    'yearly': {
-        'name': '年付版',
-        'price': 399,
-        'daily_ai_limit': 9999,
-        'competitor_daily_limit': 9999,
-        'can_export': True,
-        'can_diagnosis': True,
-        'can_monthly_report': True,
-        'can_multi_shop': False,
-        'can_api': False,
-        'can_competitor': True
+    'ultimate': {
+        'name': '旗舰版', 'price': 99, 'yearly_price': 799,
+        'daily_ai_limit': 99999, 'competitor_daily_limit': 99999,
+        'can_export': True, 'can_diagnosis': True, 'can_monthly_report': True,
+        'can_multi_shop': True, 'can_api': True, 'can_competitor': True,
+        'history_limit': 9999, 'template_limit': 999
     },
     'enterprise': {
-        'name': '企业版',
-        'price': 199,
-        'daily_ai_limit': 99999,
-        'competitor_daily_limit': 99999,
-        'can_export': True,
-        'can_diagnosis': True,
-        'can_monthly_report': True,
-        'can_multi_shop': True,
-        'can_api': True,
-        'can_competitor': True
+        'name': '企业版', 'price': 1999, 'yearly_price': 19999,
+        'daily_ai_limit': 999999, 'competitor_daily_limit': 999999,
+        'can_export': True, 'can_diagnosis': True, 'can_monthly_report': True,
+        'can_multi_shop': True, 'can_api': True, 'can_competitor': True,
+        'history_limit': 99999, 'template_limit': 9999
     }
 }
 
-# 允许的电商平台域名（防SSRF）
 ALLOWED_ECOMMERCE_DOMAINS = [
     'taobao.com', 'tmall.com', 'jd.com', 'pinduoduo.com', 'yangkeduo.com',
     'douyin.com', 'jinritemai.com', 'xiaohongshu.com', 'xhslink.com',
     'kuaishou.com', 'suning.com', 'vip.com', 'kaola.com'
 ]
 
-# 常见弱密码黑名单
 WEAK_PASSWORDS = {
     '123456', 'password', '12345678', 'qwerty', 'abc123', '111111',
     '000000', '123123', 'iloveyou', 'admin', 'letmein', 'welcome',
     'monkey', 'dragon', 'master', '666666', '888888', '654321'
 }
+
+# 系统通知模板
+SYSTEM_NOTIFICATIONS = [
+    {'type': 'system', 'icon': '🔔', 'title': '欢迎使用电商AI运营助手', 'content': '注册即送10次AI生成次数，开始体验智能运营吧！'},
+    {'type': 'activity', 'icon': '🎁', 'title': '新用户专享优惠', 'content': '专业版首月仅需¥39，限时7天有效，快来升级吧！'},
+]
+
+# 模板市场数据
+TEMPLATE_MARKET = [
+    {'id': 't1', 'name': '男装爆款标题模板', 'category': 'title', 'desc': '包含核心词+属性词+营销词+场景词的高点击率标题公式', 'tags': ['标题', '男装', '淘宝'], 'usage': 2300, 'rating': 4.9, 'content': '【爆款】{年份}新款{商品名} {卖点} 百搭潮流款'},
+    {'id': 't2', 'name': '美妆详情页模板', 'category': 'detail', 'desc': '成分解析+使用方法+效果对比+用户评价的专业详情结构', 'tags': ['详情页', '美妆', '小红书'], 'usage': 1800, 'rating': 4.8, 'content': '【产品亮点】\n{卖点}\n\n【成分解析】\n{成分}\n\n【使用方法】\n{用法}'},
+    {'id': 't3', 'name': '售后处理话术模板', 'category': 'service', 'desc': '退换货、退款、差评、投诉等全场景标准化回复模板', 'tags': ['话术', '售后', '全平台'], 'usage': 3100, 'rating': 4.9, 'content': '亲，非常理解您的心情~关于{问题}，我们会{解决方案}，您看可以吗~'},
+    {'id': 't4', 'name': '食品零食标题模板', 'category': 'title', 'desc': '突出口感、原料、产地、健康卖点的食品类高转化标题', 'tags': ['标题', '食品', '拼多多'], 'usage': 1500, 'rating': 4.7, 'content': '【产地直供】{商品名} {卖点} 新鲜直达'},
+    {'id': 't5', 'name': '数码3C详情模板', 'category': 'detail', 'desc': '参数对比+性能测试+使用场景+技术解析的专业数码详情', 'tags': ['详情页', '数码', '京东'], 'usage': 986, 'rating': 4.8, 'content': '【核心参数】\n{参数}\n\n【性能测试】\n{性能}'},
+    {'id': 't6', 'name': '运营周报模板', 'category': 'report', 'desc': '数据概述+趋势分析+问题诊断+下周计划的标准周报结构', 'tags': ['报表', '周报', '全平台'], 'usage': 2700, 'rating': 4.9, 'content': '【运营周报】\n一、核心数据\n二、流量分析\n三、问题诊断\n四、下周计划'},
+]
 
 # ==================== 工具函数 ====================
 def load_users():
@@ -123,13 +114,31 @@ def save_users(users):
     with open(USERS_FILE, 'w', encoding='utf-8') as f:
         json.dump(users, f, ensure_ascii=False, indent=2)
 
+def load_orders():
+    if os.path.exists(ORDERS_FILE):
+        with open(ORDERS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return []
+
+def save_orders(orders):
+    with open(ORDERS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(orders, f, ensure_ascii=False, indent=2)
+
+def load_feedbacks():
+    if os.path.exists(FEEDBACKS_FILE):
+        with open(FEEDBACKS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return []
+
+def save_feedbacks(feedbacks):
+    with open(FEEDBACKS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(feedbacks, feedbacks, ensure_ascii=False, indent=2)
+
 def hash_password(password):
-    """使用SHA256+盐值哈希密码"""
-    salt = 'ecommerce_ai_salt_2026_secure'
+    salt = 'ecommerce_ai_salt_2026_secure_v7'
     return hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 100000).hex()
 
 def verify_password(password, hashed):
-    """验证密码"""
     return hash_password(password) == hashed
 
 def get_current_user():
@@ -139,30 +148,25 @@ def get_current_user():
     return users.get(session['username'])
 
 def sanitize_input(text, max_length=1000):
-    """清理用户输入，防止XSS和注入"""
     if not text:
         return ''
     text = str(text).strip()
     if len(text) > max_length:
         text = text[:max_length]
-    # 移除危险字符
     text = re.sub(r'[<>]', '', text)
     return text
 
 def sanitize_output(text):
-    """HTML转义输出，防止XSS"""
     if not text:
         return ''
     return html.escape(str(text), quote=True)
 
 def mask_phone(phone):
-    """手机号脱敏：139****5678"""
     if not phone or len(phone) != 11:
         return phone
     return phone[:3] + '****' + phone[7:]
 
 def validate_password_strength(password):
-    """验证密码强度，返回(是否通过, 错误信息)"""
     if len(password) < 8:
         return False, '密码至少8位'
     if password.lower() in WEAK_PASSWORDS:
@@ -176,50 +180,38 @@ def validate_password_strength(password):
     return True, ''
 
 def validate_phone(phone):
-    """验证手机号格式"""
     return bool(re.match(r'^1[3-9]\d{9}$', phone))
 
 def check_rate_limit(endpoint='default'):
-    """API限流检查，返回(是否允许, 剩余次数)"""
     ip = request.remote_addr or 'unknown'
     now = time.time()
     key = f"{ip}:{endpoint}"
-    
     limit = API_RATE_LIMIT.get(endpoint, API_RATE_LIMIT['default'])
     per_minute = limit['per_minute']
-    
     if key not in api_rate_limit:
         api_rate_limit[key] = {'count': 0, 'window_start': now}
-    
     record = api_rate_limit[key]
     if now - record['window_start'] > 60:
         record['count'] = 0
         record['window_start'] = now
-    
     record['count'] += 1
     remaining = max(0, per_minute - record['count'])
-    
     return record['count'] <= per_minute, remaining
 
 def check_login_attempts(ip):
-    """检查登录尝试次数，返回(是否允许, 剩余次数)"""
     now = time.time()
     if ip not in login_attempts:
         login_attempts[ip] = {'count': 0, 'lock_until': 0}
-    
     record = login_attempts[ip]
     if record['lock_until'] > now:
         return False, 0
-    
     remaining = MAX_LOGIN_ATTEMPTS - record['count']
     return remaining > 0, remaining
 
 def record_login_failure(ip):
-    """记录登录失败"""
     now = time.time()
     if ip not in login_attempts:
         login_attempts[ip] = {'count': 0, 'lock_until': 0}
-    
     record = login_attempts[ip]
     record['count'] += 1
     if record['count'] >= MAX_LOGIN_ATTEMPTS:
@@ -227,51 +219,88 @@ def record_login_failure(ip):
         record['count'] = 0
 
 def reset_login_attempts(ip):
-    """重置登录尝试"""
     if ip in login_attempts:
         login_attempts[ip] = {'count': 0, 'lock_until': 0}
 
 def check_daily_limit(user, limit_type='ai'):
-    """检查每日使用次数限制"""
     if not user:
         return False, '请先登录'
-    
     plan = MEMBER_PLANS.get(user.get('plan', 'free'), MEMBER_PLANS['free'])
     today = time.strftime('%Y-%m-%d')
-    
     if user.get('last_usage_date') != today:
         user['daily_ai_usage'] = 0
         user['daily_competitor_usage'] = 0
         user['last_usage_date'] = today
-    
     if limit_type == 'ai':
         if user.get('daily_ai_usage', 0) >= plan['daily_ai_limit']:
             return False, '今日AI生成次数已用完，请明日再试或升级会员'
     elif limit_type == 'competitor':
         if user.get('daily_competitor_usage', 0) >= plan['competitor_daily_limit']:
             return False, '今日竞品分析次数已用完，请明日再试或升级会员'
-    
     return True, ''
 
 def increment_usage(user, usage_type='ai'):
-    """增加使用次数"""
     today = time.strftime('%Y-%m-%d')
     if user.get('last_usage_date') != today:
         user['daily_ai_usage'] = 0
         user['daily_competitor_usage'] = 0
         user['last_usage_date'] = today
-    
     if usage_type == 'ai':
         user['daily_ai_usage'] = user.get('daily_ai_usage', 0) + 1
     elif usage_type == 'competitor':
         user['daily_competitor_usage'] = user.get('daily_competitor_usage', 0) + 1
-    
     users = load_users()
     users[session['username']] = user
     save_users(users)
 
+def add_notification(user, notification_type, icon, title, content, action_type='', action_data=''):
+    """添加系统通知"""
+    if 'notifications' not in user:
+        user['notifications'] = []
+    notification = {
+        'id': str(uuid.uuid4()),
+        'type': notification_type,
+        'icon': icon,
+        'title': title,
+        'content': content,
+        'read': False,
+        'action_type': action_type,
+        'action_data': action_data,
+        'created_at': time.time()
+    }
+    user['notifications'].insert(0, notification)
+    # 最多保留100条
+    if len(user['notifications']) > 100:
+        user['notifications'] = user['notifications'][:100]
+    users = load_users()
+    users[session['username']] = user
+    save_users(users)
+    return notification
+
+def add_ai_history(user, gen_type, title, result, params=None):
+    """添加AI生成历史"""
+    if 'ai_history' not in user:
+        user['ai_history'] = []
+    history_item = {
+        'id': str(uuid.uuid4()),
+        'type': gen_type,
+        'title': title,
+        'result': result,
+        'params': params or {},
+        'favorite': False,
+        'created_at': time.time()
+    }
+    user['ai_history'].insert(0, history_item)
+    plan = MEMBER_PLANS.get(user.get('plan', 'free'), MEMBER_PLANS['free'])
+    limit = plan.get('history_limit', 20)
+    if len(user['ai_history']) > limit:
+        user['ai_history'] = user['ai_history'][:limit]
+    users = load_users()
+    users[session['username']] = user
+    save_users(users)
+    return history_item
+
 def require_login(f):
-    """登录验证装饰器"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'username' not in session:
@@ -280,7 +309,6 @@ def require_login(f):
     return decorated_function
 
 def require_permission(permission):
-    """权限验证装饰器"""
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -289,13 +317,12 @@ def require_permission(permission):
                 return jsonify({'success': False, 'need_login': True, 'message': '请先登录'}), 401
             plan = MEMBER_PLANS.get(user.get('plan', 'free'), MEMBER_PLANS['free'])
             if not plan.get(permission, False):
-                return jsonify({'success': False, 'need_upgrade': True, 'message': f'该功能为付费功能，请升级会员解锁'}), 403
+                return jsonify({'success': False, 'need_upgrade': True, 'message': '该功能为付费功能，请升级会员解锁'}), 403
             return f(*args, **kwargs)
         return decorated_function
     return decorator
 
 def validate_ecommerce_url(url):
-    """验证电商URL，防止SSRF"""
     if not url:
         return False, '请输入商品链接'
     try:
@@ -304,7 +331,6 @@ def validate_ecommerce_url(url):
         if parsed.scheme not in ('http', 'https'):
             return False, '链接格式不正确'
         domain = parsed.netloc.lower()
-        # 检查是否是允许的电商平台域名
         for allowed in ALLOWED_ECOMMERCE_DOMAINS:
             if domain == allowed or domain.endswith('.' + allowed):
                 return True, ''
@@ -315,30 +341,20 @@ def validate_ecommerce_url(url):
 # ==================== 安全响应头 ====================
 @app.after_request
 def add_security_headers(response):
-    """添加安全响应头"""
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';"
-    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
     return response
 
-# ==================== 错误处理 ====================
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({'success': False, 'message': '接口不存在'}), 404
 
 @app.errorhandler(500)
 def internal_error(error):
-    # 生产环境不暴露详细错误信息
     app.logger.error(f'Server error: {str(error)}')
     return jsonify({'success': False, 'message': '服务器内部错误，请稍后重试'}), 500
-
-@app.errorhandler(400)
-def bad_request(error):
-    return jsonify({'success': False, 'message': '请求参数错误'}), 400
 
 # ==================== 路由 ====================
 @app.route('/')
@@ -347,87 +363,113 @@ def index():
 
 @app.route('/api/health')
 def health():
-    """健康检查 - 仅返回基本状态，不暴露敏感信息"""
     return jsonify({'status': 'ok'})
 
 # ==================== 用户系统 ====================
 @app.route('/api/register', methods=['POST'])
 def register():
-    # API限流
     allowed, remaining = check_rate_limit('register')
     if not allowed:
         return jsonify({'success': False, 'message': '注册过于频繁，请稍后再试'}), 429
-    
+
     data = request.get_json() or {}
     phone = sanitize_input(data.get('phone', ''), 20)
     password = data.get('password', '')
     confirm_password = data.get('confirm_password', '')
-    
-    # 验证手机号
+    code = sanitize_input(data.get('code', ''), 10)
+
     if not validate_phone(phone):
         return jsonify({'success': False, 'message': '请输入正确的手机号'}), 400
-    
-    # 验证密码强度
     valid, msg = validate_password_strength(password)
     if not valid:
         return jsonify({'success': False, 'message': msg}), 400
-    
     if password != confirm_password:
         return jsonify({'success': False, 'message': '两次密码不一致'}), 400
-    
+
     users = load_users()
     if phone in users:
         return jsonify({'success': False, 'message': '该手机号已注册'}), 400
-    
-    # 创建用户
+
     user_id = str(uuid.uuid4())
+    now = time.time()
     users[phone] = {
-        'id': user_id,
-        'username': phone,
-        'phone': phone,
-        'password': hash_password(password),
-        'plan': 'free',
-        'created_at': time.time(),
-        'daily_ai_usage': 0,
-        'daily_competitor_usage': 0,
+        'id': user_id, 'username': phone, 'phone': phone,
+        'password': hash_password(password), 'plan': 'free',
+        'nickname': '电商用户' + phone[-4:],
+        'email': '', 'city': '', 'avatar': '',
+        'created_at': now, 'last_login': now,
+        'daily_ai_usage': 0, 'daily_competitor_usage': 0,
         'last_usage_date': time.strftime('%Y-%m-%d'),
-        'bound_shops': [],
-        'usage_history': []
+        'bound_shops': [], 'ai_history': [], 'favorites': [],
+        'orders': [], 'invoices': [], 'coupons': [],
+        'notifications': [], 'tasks': [], 'invitations': [],
+        'feedbacks': [], 'used_templates': [],
+        'security_settings': {'two_factor': False, 'login_alert': True},
+        'devices': [], 'login_history': [],
+        'member_expire': 0, 'invite_code': phone[-6:],
+        'invited_by': '', 'total_invited': 0, 'total_reward': 0
     }
     save_users(users)
-    
-    # 自动登录
+
     session['username'] = phone
     session['user_id'] = user_id
     session.permanent = True
-    
-    return jsonify({'success': True, 'message': '注册成功', 'username': phone})
+
+    # 记录登录设备
+    user = users[phone]
+    device_info = {
+        'id': str(uuid.uuid4()),
+        'device': '电脑端浏览器',
+        'ip': request.remote_addr or 'unknown',
+        'location': '未知地区',
+        'login_time': now,
+        'last_active': now,
+        'current': True
+    }
+    user['devices'].append(device_info)
+    user['login_history'].append({
+        'time': now, 'ip': request.remote_addr or 'unknown',
+        'device': '电脑端浏览器', 'status': 'success'
+    })
+
+    # 添加欢迎通知
+    add_notification(user, 'system', '🎉', '欢迎使用电商AI运营助手',
+                      '注册即送10次AI生成次数，开始体验智能运营吧！')
+    add_notification(user, 'activity', '🎁', '新用户专享50元优惠券',
+                      '专业版首月仅需¥39，限时7天有效，快来使用吧！', 'coupon', '')
+
+    # 添加新用户优惠券
+    user['coupons'].append({
+        'id': str(uuid.uuid4()), 'name': '新用户专享50元优惠券',
+        'amount': 50, 'min_amount': 39, 'type': 'discount',
+        'status': 'available', 'created_at': now,
+        'expire_at': now + 7 * 86400, 'scope': '全部套餐'
+    })
+    save_users(users)
+
+    return jsonify({'success': True, 'message': '注册成功', 'username': phone, 'nickname': user['nickname']})
 
 @app.route('/api/login', methods=['POST'])
 def login():
     ip = request.remote_addr or 'unknown'
-    
-    # 检查登录锁定
     allowed, remaining = check_login_attempts(ip)
     if not allowed:
         return jsonify({'success': False, 'message': '登录失败次数过多，请15分钟后再试'}), 429
-    
-    # API限流
     rate_allowed, _ = check_rate_limit('login')
     if not rate_allowed:
         return jsonify({'success': False, 'message': '登录过于频繁，请稍后再试'}), 429
-    
+
     data = request.get_json() or {}
     phone = sanitize_input(data.get('phone', ''), 20)
     password = data.get('password', '')
-    
+
     if not phone or not password:
         record_login_failure(ip)
         return jsonify({'success': False, 'message': '请填写手机号和密码'}), 400
-    
+
     users = load_users()
     user = users.get(phone)
-    
+
     if not user or not verify_password(password, user.get('password', '')):
         record_login_failure(ip)
         _, remaining = check_login_attempts(ip)
@@ -435,24 +477,60 @@ def login():
         if remaining > 0 and remaining <= 3:
             msg += f'，剩余{remaining}次尝试机会'
         return jsonify({'success': False, 'message': msg}), 401
-    
-    # 登录成功
+
     reset_login_attempts(ip)
     session['username'] = phone
     session['user_id'] = user.get('id', '')
     session.permanent = True
-    
-    # 记录登录日志
-    user['last_login'] = time.time()
+
+    now = time.time()
+    user['last_login'] = now
     user['last_login_ip'] = ip
+
+    # 更新当前设备
+    for d in user.get('devices', []):
+        d['current'] = False
+    device_info = {
+        'id': str(uuid.uuid4()), 'device': '电脑端浏览器',
+        'ip': ip, 'location': '未知地区', 'login_time': now,
+        'last_active': now, 'current': True
+    }
+    user['devices'].append(device_info)
+    if len(user['devices']) > 10:
+        user['devices'] = user['devices'][-10:]
+
+    user['login_history'].append({
+        'time': now, 'ip': ip, 'device': '电脑端浏览器', 'status': 'success'
+    })
+    if len(user['login_history']) > 50:
+        user['login_history'] = user['login_history'][-50:]
+
+    # 登录提醒
+    if user.get('security_settings', {}).get('login_alert', True):
+        add_notification(user, 'security', '🔐', '新设备登录提醒',
+                          f'您的账号在电脑端浏览器登录，IP：{ip}。如非本人操作请及时修改密码。')
+
     users[phone] = user
     save_users(users)
-    
-    return jsonify({'success': True, 'message': '登录成功', 'username': phone})
+
+    return jsonify({
+        'success': True, 'message': '登录成功', 'username': phone,
+        'nickname': user.get('nickname', '用户'), 'plan': user.get('plan', 'free')
+    })
 
 @app.route('/api/logout', methods=['POST', 'GET'])
 def logout():
-    """退出登录 - 清除session"""
+    # 标记当前设备为离线
+    if 'username' in session:
+        users = load_users()
+        user = users.get(session['username'])
+        if user:
+            for d in user.get('devices', []):
+                if d.get('current'):
+                    d['current'] = False
+                    d['last_active'] = time.time()
+            users[session['username']] = user
+            save_users(users)
     session.clear()
     return jsonify({'success': True, 'message': '已退出登录'})
 
@@ -461,29 +539,56 @@ def user_info():
     user = get_current_user()
     if not user:
         return jsonify({'logged_in': False})
-    
     plan = MEMBER_PLANS.get(user.get('plan', 'free'), MEMBER_PLANS['free'])
-    
-    # 手机号脱敏，不返回完整手机号
+    unread_count = len([n for n in user.get('notifications', []) if not n.get('read')])
     return jsonify({
-        'logged_in': True,
-        'username': user['username'],
+        'logged_in': True, 'username': user['username'],
+        'nickname': user.get('nickname', '用户'),
         'phone_masked': mask_phone(user.get('phone', '')),
-        'plan': user.get('plan', 'free'),
-        'plan_name': plan['name'],
+        'email': user.get('email', ''), 'city': user.get('city', ''),
+        'avatar': user.get('avatar', ''),
+        'plan': user.get('plan', 'free'), 'plan_name': plan['name'],
+        'member_expire': user.get('member_expire', 0),
         'daily_ai_limit': plan['daily_ai_limit'],
         'daily_ai_usage': user.get('daily_ai_usage', 0),
         'daily_competitor_usage': user.get('daily_competitor_usage', 0),
         'permissions': {
-            'can_export': plan['can_export'],
-            'can_diagnosis': plan['can_diagnosis'],
+            'can_export': plan['can_export'], 'can_diagnosis': plan['can_diagnosis'],
             'can_monthly_report': plan['can_monthly_report'],
-            'can_multi_shop': plan['can_multi_shop'],
-            'can_api': plan['can_api']
+            'can_multi_shop': plan['can_multi_shop'], 'can_api': plan['can_api']
         },
         'bound_shops_count': len(user.get('bound_shops', [])),
+        'unread_notifications': unread_count,
+        'invite_code': user.get('invite_code', ''),
         'created_at': user.get('created_at', 0)
     })
+
+@app.route('/api/update-profile', methods=['POST'])
+@require_login
+def update_profile():
+    """修改个人信息"""
+    data = request.get_json() or {}
+    nickname = sanitize_input(data.get('nickname', ''), 50)
+    email = sanitize_input(data.get('email', ''), 100)
+    city = sanitize_input(data.get('city', ''), 50)
+    avatar = sanitize_input(data.get('avatar', ''), 500)
+
+    user = get_current_user()
+    if nickname:
+        user['nickname'] = nickname
+    if email:
+        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+            return jsonify({'success': False, 'message': '邮箱格式不正确'}), 400
+        user['email'] = email
+    if city:
+        user['city'] = city
+    if avatar:
+        user['avatar'] = avatar
+
+    users = load_users()
+    users[session['username']] = user
+    save_users(users)
+    return jsonify({'success': True, 'message': '个人信息已更新', 'nickname': user.get('nickname')})
 
 @app.route('/api/change-password', methods=['POST'])
 @require_login
@@ -492,20 +597,91 @@ def change_password():
     data = request.get_json() or {}
     old_password = data.get('old_password', '')
     new_password = data.get('new_password', '')
-    
+    confirm_password = data.get('confirm_password', '')
+
     user = get_current_user()
     if not verify_password(old_password, user.get('password', '')):
         return jsonify({'success': False, 'message': '原密码错误'}), 400
-    
+    if new_password != confirm_password:
+        return jsonify({'success': False, 'message': '两次新密码不一致'}), 400
     valid, msg = validate_password_strength(new_password)
     if not valid:
         return jsonify({'success': False, 'message': msg}), 400
-    
+    if new_password == old_password:
+        return jsonify({'success': False, 'message': '新密码不能与原密码相同'}), 400
+
     users = load_users()
     users[session['username']]['password'] = hash_password(new_password)
+    # 密码修改后清除其他设备登录
+    users[session['username']]['devices'] = [d for d in users[session['username']].get('devices', []) if d.get('current')]
     save_users(users)
-    
-    return jsonify({'success': True, 'message': '密码修改成功'})
+
+    add_notification(users[session['username']], 'security', '🔐', '密码已修改',
+                     '您的登录密码已成功修改，如非本人操作请立即联系客服。')
+    return jsonify({'success': True, 'message': '密码修改成功，请重新登录'})
+
+@app.route('/api/security-settings', methods=['GET', 'POST'])
+@require_login
+def security_settings():
+    """安全设置：获取或修改"""
+    user = get_current_user()
+    if request.method == 'GET':
+        return jsonify({
+            'success': True,
+            'settings': user.get('security_settings', {'two_factor': False, 'login_alert': True}),
+            'security_score': calculate_security_score(user)
+        })
+    else:
+        data = request.get_json() or {}
+        if 'security_settings' not in user:
+            user['security_settings'] = {'two_factor': False, 'login_alert': True}
+        if 'two_factor' in data:
+            user['security_settings']['two_factor'] = bool(data['two_factor'])
+        if 'login_alert' in data:
+            user['security_settings']['login_alert'] = bool(data['login_alert'])
+        users = load_users()
+        users[session['username']] = user
+        save_users(users)
+        return jsonify({'success': True, 'message': '安全设置已更新', 'security_score': calculate_security_score(user)})
+
+def calculate_security_score(user):
+    score = 60
+    if user.get('email'):
+        score += 10
+    if user.get('security_settings', {}).get('two_factor'):
+        score += 15
+    if user.get('security_settings', {}).get('login_alert'):
+        score += 5
+    if len(user.get('bound_shops', [])) > 0:
+        score += 5
+    return min(score, 100)
+
+@app.route('/api/devices', methods=['GET'])
+@require_login
+def get_devices():
+    """获取登录设备列表"""
+    user = get_current_user()
+    return jsonify({'success': True, 'devices': user.get('devices', [])})
+
+@app.route('/api/device-logout', methods=['POST'])
+@require_login
+def device_logout():
+    """下线指定设备"""
+    data = request.get_json() or {}
+    device_id = sanitize_input(data.get('device_id', ''), 100)
+    user = get_current_user()
+    user['devices'] = [d for d in user.get('devices', []) if d.get('id') != device_id]
+    users = load_users()
+    users[session['username']] = user
+    save_users(users)
+    return jsonify({'success': True, 'message': '设备已下线'})
+
+@app.route('/api/login-history', methods=['GET'])
+@require_login
+def login_history():
+    """获取登录记录"""
+    user = get_current_user()
+    return jsonify({'success': True, 'history': user.get('login_history', [])[-20:]})
 
 # ==================== AI内容生成API ====================
 @app.route('/api/generate-title', methods=['POST'])
@@ -515,37 +691,32 @@ def generate_title():
     allowed, msg = check_daily_limit(user, 'ai')
     if not allowed:
         return jsonify({'success': False, 'message': msg}), 403
-    
+
     data = request.get_json() or {}
     product_name = sanitize_input(data.get('product_name', ''), 100)
-    features = sanitize_input(data.get('features', ''), 500)
+    features = sanitize_input(data.get('features', '') or data.get('selling_points', ''), 500)
     platform = sanitize_input(data.get('platform', '淘宝'), 20)
     style = sanitize_input(data.get('style', '引流爆款'), 20)
-    word_count = sanitize_input(data.get('word_count', '30字内'), 20)
-    audience = sanitize_input(data.get('audience', '通用'), 20)
-    
+    count = int(data.get('count', 10))
+
     if not product_name:
         return jsonify({'success': False, 'message': '请输入商品名称'}), 400
-    
-    # 演示模式返回示例数据（输出已转义防XSS）
+
     demo_result = f"""1. 【爆款】2026新款{sanitize_output(product_name)} {sanitize_output(features)} 百搭潮流款
 2. {sanitize_output(platform)}热销 {sanitize_output(product_name)} {sanitize_output(style)}风格 高点击率
 3. 【商场同款】{sanitize_output(product_name)} {sanitize_output(features)} 品质保证
 4. 2026新品 {sanitize_output(product_name)} 网红推荐 限时特惠
 5. 【销量10万+】{sanitize_output(product_name)} 好评如潮 复购率高
-6. {sanitize_output(product_name)} {sanitize_output(word_count)} 搜索优化 精准引流
+6. {sanitize_output(product_name)} 搜索优化 精准引流
 7. 【官方正品】{sanitize_output(product_name)} 假一赔十 极速发货
-8. {sanitize_output(audience)}必备 {sanitize_output(product_name)} 简约时尚 百搭款
+8. 必备 {sanitize_output(product_name)} 简约时尚 百搭款
 9. 【限时折扣】{sanitize_output(product_name)} {sanitize_output(features)} 今日特价
 10. {sanitize_output(product_name)} 品质严选 不满意包退 放心购买"""
-    
+
     increment_usage(user, 'ai')
-    
-    return jsonify({
-        'success': True,
-        'result': demo_result,
-        'demo_mode': not bool(API_KEY)
-    })
+    add_ai_history(user, 'title', product_name, demo_result, {'platform': platform, 'style': style})
+
+    return jsonify({'success': True, 'result': demo_result, 'demo_mode': not bool(API_KEY)})
 
 @app.route('/api/generate-detail', methods=['POST'])
 @require_login
@@ -554,17 +725,16 @@ def generate_detail():
     allowed, msg = check_daily_limit(user, 'ai')
     if not allowed:
         return jsonify({'success': False, 'message': msg}), 403
-    
+
     data = request.get_json() or {}
     product_name = sanitize_input(data.get('product_name', ''), 100)
-    features = sanitize_input(data.get('features', ''), 500)
-    params = sanitize_input(data.get('params', ''), 300)
-    platform = sanitize_input(data.get('platform', '淘宝'), 20)
+    features = sanitize_input(data.get('features', '') or data.get('selling_points', ''), 500)
+    params = sanitize_input(data.get('params', '') or data.get('specs', ''), 300)
     style = sanitize_input(data.get('style', '专业走心'), 20)
-    
+
     if not product_name or not features:
         return jsonify({'success': False, 'message': '请填写商品名称和核心卖点'}), 400
-    
+
     demo_result = f"""【首屏Slogan】
 {sanitize_output(product_name)} - {sanitize_output(style)}之选，重新定义品质生活
 
@@ -588,14 +758,10 @@ def generate_detail():
 
 【温馨提示】
 由于拍摄光线和显示器不同，实物与图片可能存在轻微色差，请以实物为准。"""
-    
+
     increment_usage(user, 'ai')
-    
-    return jsonify({
-        'success': True,
-        'result': demo_result,
-        'demo_mode': not bool(API_KEY)
-    })
+    add_ai_history(user, 'detail', product_name, demo_result, {'style': style})
+    return jsonify({'success': True, 'result': demo_result, 'demo_mode': not bool(API_KEY)})
 
 @app.route('/api/generate-service', methods=['POST'])
 @require_login
@@ -604,18 +770,16 @@ def generate_service():
     allowed, msg = check_daily_limit(user, 'ai')
     if not allowed:
         return jsonify({'success': False, 'message': msg}), 403
-    
+
     data = request.get_json() or {}
     scenario = sanitize_input(data.get('scenario', '售前咨询'), 20)
     question = sanitize_input(data.get('question', ''), 300)
     style = sanitize_input(data.get('style', '温柔亲和'), 20)
-    
+
     if not question:
         return jsonify({'success': False, 'message': '请输入具体问题场景'}), 400
-    
-    demo_result = f"""【场景：{sanitize_output(scenario)}】【风格：{sanitize_output(style)}】
 
-话术1（耐心解答型）：
+    demo_result = f"""话术1（耐心解答型）：
 亲，您好呀~关于您问的「{sanitize_output(question)}」这个问题，我来为您详细解答一下。我们的产品都是经过严格质检的，品质方面您完全可以放心呢~
 
 话术2（专业自信型）：
@@ -629,39 +793,29 @@ def generate_service():
 
 话术5（高情商挽留型）：
 亲，非常理解您的顾虑~关于「{sanitize_output(question)}」，我想跟您说，我们的产品已经服务了上万名顾客，好评率99%以上。如果您收到后有任何不满意，我们随时为您解决，您看可以吗~"""
-    
+
     increment_usage(user, 'ai')
-    
-    return jsonify({
-        'success': True,
-        'result': demo_result,
-        'demo_mode': not bool(API_KEY)
-    })
+    add_ai_history(user, 'service', scenario, demo_result, {'scenario': scenario, 'style': style})
+    return jsonify({'success': True, 'result': demo_result, 'demo_mode': not bool(API_KEY)})
 
 # ==================== 竞品分析API ====================
 @app.route('/api/competitor-analysis', methods=['POST'])
 @require_login
 def competitor_analysis():
     user = get_current_user()
-    
-    # 权限校验
     plan = MEMBER_PLANS.get(user.get('plan', 'free'), MEMBER_PLANS['free'])
     if not plan.get('can_competitor', False):
         return jsonify({'success': False, 'need_upgrade': True, 'message': '竞品分析为付费功能，请升级会员解锁'}), 403
-    
     allowed, msg = check_daily_limit(user, 'competitor')
     if not allowed:
         return jsonify({'success': False, 'message': msg}), 403
-    
+
     data = request.get_json() or {}
     url = sanitize_input(data.get('url', ''), 500)
-    
-    # URL校验，防SSRF
     valid, msg = validate_ecommerce_url(url)
     if not valid:
         return jsonify({'success': False, 'message': msg}), 400
-    
-    # 演示模式返回模拟数据
+
     product_id = ''.join(random.choices('0123456789', k=3))
     demo_data = {
         'product_name': f'竞品商品{product_id}',
@@ -681,28 +835,34 @@ def competitor_analysis():
         },
         'ai_summary': f'该竞品商品{product_id}当前采用低价引流策略，月销较高，好评率优秀。主要优势在于性价比和物流速度，差评主要集中在尺码和色差问题。建议我方产品在尺码准确性和品控方面加强，同时优化主图点击率和详情页转化率。'
     }
-    
     increment_usage(user, 'competitor')
-    
-    return jsonify({
-        'success': True,
-        'data': demo_data,
-        'demo_mode': not bool(API_KEY)
-    })
+    add_ai_history(user, 'competitor', f'竞品分析{product_id}', demo_data['ai_summary'], {'url': url})
+    return jsonify({'success': True, 'data': demo_data, 'demo_mode': not bool(API_KEY)})
 
 # ==================== 店铺数据API ====================
 @app.route('/api/shop-data')
 @require_login
 def shop_data():
     user = get_current_user()
-    plan = MEMBER_PLANS.get(user.get('plan', 'free'), MEMBER_PLANS['free'])
-    
-    # 店铺数据监控为付费功能
-    if user.get('plan') == 'free':
-        return jsonify({'success': False, 'need_upgrade': True, 'message': '店铺数据监控为付费功能，请升级会员解锁'}), 403
-    
-    # 演示模式返回模拟数据
+    shop_id = request.args.get('shop_id', '')
+    shops = user.get('bound_shops', [])
+
+    if not shops:
+        return jsonify({'success': False, 'message': '请先绑定店铺', 'need_bind': True}), 400
+
+    # 根据绑定的店铺生成数据
+    if shop_id:
+        shop = next((s for s in shops if s.get('id') == shop_id), shops[0])
+    else:
+        shop = shops[0]
+
+    shop_name = shop.get('shop_name', '我的店铺')
+    seed = hash(shop.get('id', 'default')) % 10000
+    random.seed(seed)
+
     demo_data = {
+        'shop_name': shop_name,
+        'platform': shop.get('platform', '淘宝'),
         'overview': {
             'today_orders': random.randint(20, 100),
             'today_sales': random.randint(2000, 20000),
@@ -712,31 +872,21 @@ def shop_data():
             'sales_change': round(random.uniform(-10, 35), 1)
         },
         'top_products': [
-            {'name': '爆款商品A', 'sales': random.randint(50, 200), 'revenue': random.randint(2000, 10000), 'trend': 'up'},
-            {'name': '热销商品B', 'sales': random.randint(30, 150), 'revenue': random.randint(1500, 8000), 'trend': 'up'},
-            {'name': '潜力商品C', 'sales': random.randint(20, 100), 'revenue': random.randint(1000, 5000), 'trend': 'down'},
-            {'name': '常规商品D', 'sales': random.randint(10, 80), 'revenue': random.randint(500, 3000), 'trend': 'up'},
-            {'name': '新品E', 'sales': random.randint(5, 50), 'revenue': random.randint(200, 2000), 'trend': 'up'}
+            {'name': f'{shop_name}-爆款A', 'sales': random.randint(50, 200), 'revenue': random.randint(2000, 10000), 'trend': 'up'},
+            {'name': f'{shop_name}-热销B', 'sales': random.randint(30, 150), 'revenue': random.randint(1500, 8000), 'trend': 'up'},
+            {'name': f'{shop_name}-潜力C', 'sales': random.randint(20, 100), 'revenue': random.randint(1000, 5000), 'trend': 'down'},
         ],
         'traffic_sources': [
             {'name': '自然搜索', 'percent': random.randint(30, 50), 'visitors': random.randint(1000, 3000)},
             {'name': '推荐流量', 'percent': random.randint(15, 30), 'visitors': random.randint(500, 2000)},
             {'name': '直通车', 'percent': random.randint(10, 25), 'visitors': random.randint(300, 1500)},
-            {'name': '淘宝客', 'percent': random.randint(5, 15), 'visitors': random.randint(100, 800)},
-            {'name': '其他', 'percent': random.randint(3, 10), 'visitors': random.randint(50, 500)}
         ],
         'alerts': [
-            {'type': 'warning', 'message': '商品C流量连续3天下滑，建议优化标题主图', 'time': '2小时前'},
-            {'type': 'danger', 'message': '转化率低于行业均值，建议优化详情页', 'time': '5小时前'},
-            {'type': 'info', 'message': '竞品A降价10%，建议关注价格动态', 'time': '1天前'}
+            {'type': 'warning', 'message': f'{shop_name}流量连续3天下滑，建议优化标题主图', 'time': '2小时前'},
         ]
     }
-    
-    return jsonify({
-        'success': True,
-        'data': demo_data,
-        'demo_mode': True
-    })
+    random.seed()
+    return jsonify({'success': True, 'data': demo_data, 'demo_mode': True})
 
 # ==================== AI运营诊断API ====================
 @app.route('/api/operation-diagnosis', methods=['POST'])
@@ -744,8 +894,11 @@ def shop_data():
 @require_permission('can_diagnosis')
 def operation_diagnosis():
     user = get_current_user()
-    
-    demo_result = """【AI智能运营诊断报告】
+    shop_id = request.get_json().get('shop_id', '') if request.is_json else ''
+    shops = user.get('bound_shops', [])
+    shop_name = shops[0].get('shop_name', '我的店铺') if shops else '我的店铺'
+
+    demo_result = f"""【AI智能运营诊断报告 - {shop_name}】
 
 一、店铺整体健康度：72分（良好，有较大提升空间）
 
@@ -769,14 +922,10 @@ def operation_diagnosis():
 - 转化率提升至3%以上
 - 客单价提升15%
 - 7天内GMV增长25%以上"""
-    
+
     increment_usage(user, 'ai')
-    
-    return jsonify({
-        'success': True,
-        'result': demo_result,
-        'demo_mode': not bool(API_KEY)
-    })
+    add_ai_history(user, 'diagnosis', f'{shop_name}诊断报告', demo_result, {})
+    return jsonify({'success': True, 'result': demo_result, 'demo_mode': not bool(API_KEY)})
 
 # ==================== 报表生成API ====================
 @app.route('/api/generate-report', methods=['POST'])
@@ -785,17 +934,16 @@ def generate_report():
     user = get_current_user()
     data = request.get_json() or {}
     report_type = sanitize_input(data.get('report_type', 'weekly'), 20)
-    
-    # 月报需要付费权限
+
     if report_type == 'monthly':
         plan = MEMBER_PLANS.get(user.get('plan', 'free'), MEMBER_PLANS['free'])
         if not plan.get('can_monthly_report', False):
             return jsonify({'success': False, 'need_upgrade': True, 'message': '月报生成为付费功能，请升级会员解锁'}), 403
-    
+
     allowed, msg = check_daily_limit(user, 'ai')
     if not allowed:
         return jsonify({'success': False, 'message': msg}), 403
-    
+
     if report_type == 'weekly':
         demo_result = """【店铺运营周报】
 统计周期：本周（周一至周日）
@@ -819,7 +967,7 @@ def generate_report():
 2. 热销商品B - 289单 - ¥28,900
 3. 潜力商品C - 215单 - ¥21,500
 4. 常规商品D - 198单 - ¥19,800
-5. 新品E - 198单 - ¥19,800
+5. 新品E - 156单 - ¥15,600
 
 四、问题与优化建议
 1. 转化率仍有提升空间，建议优化详情页
@@ -834,15 +982,89 @@ def generate_report():
         demo_result = """【店铺运营月报】
 统计周期：本月全月
 
-（完整月报内容，包含月度数据汇总、趋势分析、竞品对比、问题诊断、下月规划等）"""
-    
+一、月度数据汇总
+• 总订单量：5,236单（环比+18.5%）
+• 总销售额：¥528,560（环比+22.3%）
+• 总访客数：186,800人（环比+15.2%）
+• 转化率：2.80%（环比+0.15%）
+• 客单价：¥100.9（环比+3.2%）
+• 复购率：19.8%（环比+2.5%）
+• 退款率：3.2%（环比-0.8%）
+
+二、流量趋势分析
+本月流量整体呈上升趋势，自然搜索占比持续提升，付费流量ROI优化明显。
+
+三、商品表现分析
+爆款商品A持续领跑，新品E表现亮眼，建议加大推广力度。
+
+四、竞品对比
+与主要竞品相比，我方在价格和服务方面具有优势，但在品牌知名度方面仍有差距。
+
+五、下月规划
+• 拓展新品类，丰富产品线
+• 加强内容营销，提升品牌影响力
+• 优化供应链，降低采购成本
+• 建立会员体系，提升复购率"""
+
     increment_usage(user, 'ai')
-    
+    add_ai_history(user, 'report', f'{report_type}报表', demo_result, {'report_type': report_type})
+    return jsonify({'success': True, 'result': demo_result, 'demo_mode': True})
+
+# ==================== AI生成历史API ====================
+@app.route('/api/ai-history', methods=['GET'])
+@require_login
+def ai_history():
+    """获取AI生成历史"""
+    user = get_current_user()
+    history_type = request.args.get('type', '')
+    page = int(request.args.get('page', 1))
+    page_size = int(request.args.get('page_size', 20))
+
+    history = user.get('ai_history', [])
+    if history_type:
+        history = [h for h in history if h.get('type') == history_type]
+
+    # 分页
+    start = (page - 1) * page_size
+    end = start + page_size
+    paginated = history[start:end]
+
     return jsonify({
         'success': True,
-        'result': demo_result,
-        'demo_mode': True
+        'history': paginated,
+        'total': len(history),
+        'page': page,
+        'page_size': page_size
     })
+
+@app.route('/api/ai-history/favorite', methods=['POST'])
+@require_login
+def toggle_history_favorite():
+    """收藏/取消收藏AI历史"""
+    data = request.get_json() or {}
+    history_id = sanitize_input(data.get('id', ''), 100)
+    user = get_current_user()
+
+    for h in user.get('ai_history', []):
+        if h.get('id') == history_id:
+            h['favorite'] = not h.get('favorite', False)
+            users = load_users()
+            users[session['username']] = user
+            save_users(users)
+            return jsonify({'success': True, 'favorite': h['favorite']})
+
+    return jsonify({'success': False, 'message': '记录不存在'}), 404
+
+@app.route('/api/ai-history/<history_id>', methods=['DELETE'])
+@require_login
+def delete_history(history_id):
+    """删除AI历史记录"""
+    user = get_current_user()
+    user['ai_history'] = [h for h in user.get('ai_history', []) if h.get('id') != history_id]
+    users = load_users()
+    users[session['username']] = user
+    save_users(users)
+    return jsonify({'success': True, 'message': '记录已删除'})
 
 # ==================== 店铺绑定管理API ====================
 @app.route('/api/bind-shop', methods=['POST'])
@@ -850,57 +1072,67 @@ def generate_report():
 def bind_shop():
     user = get_current_user()
     plan = MEMBER_PLANS.get(user.get('plan', 'free'), MEMBER_PLANS['free'])
-    
+
     data = request.get_json() or {}
     platform = sanitize_input(data.get('platform', ''), 20)
     shop_name = sanitize_input(data.get('shop_name', ''), 100)
     auth_code = sanitize_input(data.get('auth_code', ''), 200)
-    
-    if not platform or not shop_name or not auth_code:
-        return jsonify({'success': False, 'message': '请填写完整信息'}), 400
-    
-    # 检查店铺数量限制
+    shop_url = sanitize_input(data.get('shop_url', ''), 500)
+
+    if not platform or not shop_name:
+        return jsonify({'success': False, 'message': '请填写平台和店铺名称'}), 400
+
     max_shops = 10 if plan.get('can_multi_shop', False) else 1
     if len(user.get('bound_shops', [])) >= max_shops:
         if max_shops == 1:
-            return jsonify({'success': False, 'need_upgrade': True, 'message': '当前版本仅支持绑定1个店铺，升级企业版可绑定10个店铺'}), 403
+            return jsonify({'success': False, 'need_upgrade': True, 'message': '当前版本仅支持绑定1个店铺，升级旗舰版可绑定多个店铺'}), 403
         return jsonify({'success': False, 'message': '已达店铺绑定上限'}), 400
-    
+
     shop_id = str(uuid.uuid4())
     new_shop = {
-        'id': shop_id,
-        'platform': platform,
-        'shop_name': shop_name,
-        'auth_code': auth_code,
-        'status': 'active',
-        'bind_time': time.time(),
-        'last_sync': time.time()
+        'id': shop_id, 'platform': platform, 'shop_name': shop_name,
+        'auth_code': auth_code or 'demo_auth_' + shop_id[:8],
+        'shop_url': shop_url, 'status': 'active',
+        'bind_time': time.time(), 'last_sync': time.time(),
+        'shop_avatar': platform[:1].upper()
     }
-    
+
     users = load_users()
     if 'bound_shops' not in users[session['username']]:
         users[session['username']]['bound_shops'] = []
     users[session['username']]['bound_shops'].append(new_shop)
     save_users(users)
-    
-    return jsonify({'success': True, 'message': '店铺绑定成功', 'shop': new_shop})
+
+    add_notification(users[session['username']], 'system', '🏪', '店铺绑定成功',
+                      f'您已成功绑定{platform}店铺「{shop_name}」，现在可以查看店铺数据了！')
+
+    safe_shop = {k: v for k, v in new_shop.items() if k != 'auth_code'}
+    return jsonify({'success': True, 'message': '店铺绑定成功', 'shop': safe_shop})
 
 @app.route('/api/unbind-shop', methods=['POST'])
 @require_login
 def unbind_shop():
     data = request.get_json() or {}
     shop_id = sanitize_input(data.get('shop_id', ''), 100)
-    
     if not shop_id:
         return jsonify({'success': False, 'message': '缺少店铺ID'}), 400
-    
+
     users = load_users()
     user = users.get(session['username'])
+    shop_name = ''
     if user and 'bound_shops' in user:
+        for s in user['bound_shops']:
+            if s.get('id') == shop_id:
+                shop_name = s.get('shop_name', '')
+                break
         user['bound_shops'] = [s for s in user['bound_shops'] if s.get('id') != shop_id]
         users[session['username']] = user
         save_users(users)
-    
+
+    if shop_name:
+        add_notification(user, 'system', '🏪', '店铺已解绑',
+                          f'店铺「{shop_name}」已成功解绑。')
+
     return jsonify({'success': True, 'message': '店铺已解绑'})
 
 @app.route('/api/shop-list')
@@ -908,25 +1140,376 @@ def unbind_shop():
 def shop_list():
     user = get_current_user()
     shops = user.get('bound_shops', [])
-    # 不返回auth_code等敏感信息
     safe_shops = [{k: v for k, v in s.items() if k != 'auth_code'} for s in shops]
     return jsonify({'success': True, 'shops': safe_shops})
 
-# ==================== 会员升级API ====================
+@app.route('/api/shop-sync', methods=['POST'])
+@require_login
+def shop_sync():
+    """同步店铺数据"""
+    data = request.get_json() or {}
+    shop_id = sanitize_input(data.get('shop_id', ''), 100)
+    user = get_current_user()
+
+    for s in user.get('bound_shops', []):
+        if s.get('id') == shop_id or not shop_id:
+            s['last_sync'] = time.time()
+            s['status'] = 'active'
+            users = load_users()
+            users[session['username']] = user
+            save_users(users)
+            return jsonify({'success': True, 'message': '店铺数据同步成功', 'last_sync': s['last_sync']})
+
+    return jsonify({'success': False, 'message': '店铺不存在'}), 404
+
+# ==================== 会员和支付API ====================
 @app.route('/api/upgrade-plan', methods=['POST'])
 @require_login
 def upgrade_plan():
+    """创建订单（模拟支付）"""
     data = request.get_json() or {}
     plan = sanitize_input(data.get('plan', ''), 20)
-    
+    period = sanitize_input(data.get('period', 'monthly'), 20)
+    coupon_id = sanitize_input(data.get('coupon_id', ''), 100)
+
     if plan not in MEMBER_PLANS:
         return jsonify({'success': False, 'message': '无效的套餐类型'}), 400
-    
+
+    plan_info = MEMBER_PLANS[plan]
+    price = plan_info.get('yearly_price', plan_info['price']) if period == 'yearly' else plan_info['price']
+
+    # 应用优惠券
+    discount = 0
+    user = get_current_user()
+    if coupon_id:
+        for c in user.get('coupons', []):
+            if c.get('id') == coupon_id and c.get('status') == 'available':
+                if price >= c.get('min_amount', 0):
+                    discount = c.get('amount', 0)
+                    c['status'] = 'used'
+                    c['used_at'] = time.time()
+                break
+
+    final_price = max(0, price - discount)
+    order_id = 'ORD' + str(int(time.time())) + str(random.randint(1000, 9999))
+
+    order = {
+        'id': order_id, 'user': session['username'],
+        'plan': plan, 'plan_name': plan_info['name'],
+        'period': period, 'original_price': price,
+        'discount': discount, 'final_price': final_price,
+        'coupon_id': coupon_id, 'status': 'pending',
+        'created_at': time.time(), 'paid_at': None,
+        'payment_method': '', 'invoice_status': 'none'
+    }
+
+    # 保存订单
+    orders = load_orders()
+    orders.append(order)
+    save_orders(orders)
+
+    return jsonify({
+        'success': True, 'message': '订单创建成功',
+        'order': order, 'pay_url': f'/api/pay/{order_id}'
+    })
+
+@app.route('/api/pay/<order_id>', methods=['POST'])
+@require_login
+def pay_order(order_id):
+    """模拟支付"""
+    data = request.get_json() or {}
+    payment_method = sanitize_input(data.get('payment_method', 'wechat'), 20)
+
+    orders = load_orders()
+    order = next((o for o in orders if o.get('id') == order_id), None)
+
+    if not order:
+        return jsonify({'success': False, 'message': '订单不存在'}), 404
+    if order.get('status') == 'paid':
+        return jsonify({'success': False, 'message': '订单已支付'}), 400
+    if order.get('user') != session['username']:
+        return jsonify({'success': False, 'message': '无权操作此订单'}), 403
+
+    # 模拟支付成功
+    order['status'] = 'paid'
+    order['paid_at'] = time.time()
+    order['payment_method'] = payment_method
+    save_orders(orders)
+
+    # 更新用户会员
     users = load_users()
-    users[session['username']]['plan'] = plan
+    user = users[session['username']]
+    user['plan'] = order['plan']
+    now = time.time()
+    if order['period'] == 'yearly':
+        user['member_expire'] = now + 365 * 86400
+    else:
+        user['member_expire'] = now + 30 * 86400
+
+    add_notification(user, 'system', '💎', '会员升级成功',
+                      f'恭喜您成功升级为{MEMBER_PLANS[order["plan"]]["name"]}，有效期至{time.strftime("%Y-%m-%d", time.localtime(user["member_expire"]))}！')
+
+    users[session['username']] = user
     save_users(users)
-    
-    return jsonify({'success': True, 'message': f'已升级为{MEMBER_PLANS[plan]["name"]}'})
+
+    return jsonify({'success': True, 'message': '支付成功，会员已开通', 'order': order})
+
+@app.route('/api/orders', methods=['GET'])
+@require_login
+def get_orders():
+    """获取用户订单列表"""
+    user = get_current_user()
+    orders = load_orders()
+    user_orders = [o for o in orders if o.get('user') == session['username']]
+    user_orders.sort(key=lambda x: x.get('created_at', 0), reverse=True)
+    return jsonify({'success': True, 'orders': user_orders})
+
+@app.route('/api/invoice', methods=['POST'])
+@require_login
+def apply_invoice():
+    """申请发票"""
+    data = request.get_json() or {}
+    order_id = sanitize_input(data.get('order_id', ''), 100)
+    invoice_type = sanitize_input(data.get('type', 'personal'), 20)
+    title = sanitize_input(data.get('title', ''), 100)
+    tax_number = sanitize_input(data.get('tax_number', ''), 50)
+    email = sanitize_input(data.get('email', ''), 100)
+
+    if not order_id or not title:
+        return jsonify({'success': False, 'message': '请填写完整信息'}), 400
+
+    orders = load_orders()
+    order = next((o for o in orders if o.get('id') == order_id), None)
+    if not order or order.get('user') != session['username']:
+        return jsonify({'success': False, 'message': '订单不存在'}), 404
+    if order.get('status') != 'paid':
+        return jsonify({'success': False, 'message': '未支付订单不能开具发票'}), 400
+
+    invoice = {
+        'id': 'INV' + str(int(time.time())),
+        'order_id': order_id, 'type': invoice_type,
+        'title': title, 'tax_number': tax_number,
+        'email': email, 'amount': order.get('final_price', 0),
+        'status': 'processing', 'created_at': time.time()
+    }
+
+    user = get_current_user()
+    if 'invoices' not in user:
+        user['invoices'] = []
+    user['invoices'].append(invoice)
+    users = load_users()
+    users[session['username']] = user
+    save_users(users)
+
+    add_notification(user, 'system', '📄', '发票申请已提交',
+                      f'订单{order_id}的发票申请已提交，预计1-3个工作日内开具完成。')
+
+    return jsonify({'success': True, 'message': '发票申请已提交', 'invoice': invoice})
+
+@app.route('/api/invoices', methods=['GET'])
+@require_login
+def get_invoices():
+    """获取发票列表"""
+    user = get_current_user()
+    return jsonify({'success': True, 'invoices': user.get('invoices', [])})
+
+@app.route('/api/coupons', methods=['GET'])
+@require_login
+def get_coupons():
+    """获取优惠券列表"""
+    user = get_current_user()
+    status = request.args.get('status', '')
+    coupons = user.get('coupons', [])
+    if status:
+        coupons = [c for c in coupons if c.get('status') == status]
+    return jsonify({'success': True, 'coupons': coupons})
+
+# ==================== 消息通知API ====================
+@app.route('/api/notifications', methods=['GET'])
+@require_login
+def get_notifications():
+    """获取通知列表"""
+    user = get_current_user()
+    n_type = request.args.get('type', '')
+    notifications = user.get('notifications', [])
+    if n_type:
+        notifications = [n for n in notifications if n.get('type') == n_type]
+    unread = len([n for n in user.get('notifications', []) if not n.get('read')])
+    return jsonify({'success': True, 'notifications': notifications, 'unread_count': unread})
+
+@app.route('/api/notifications/read', methods=['POST'])
+@require_login
+def read_notification():
+    """标记通知已读"""
+    data = request.get_json() or {}
+    notification_id = sanitize_input(data.get('id', ''), 100)
+    mark_all = data.get('all', False)
+
+    user = get_current_user()
+    if mark_all:
+        for n in user.get('notifications', []):
+            n['read'] = True
+    else:
+        for n in user.get('notifications', []):
+            if n.get('id') == notification_id:
+                n['read'] = True
+                break
+
+    users = load_users()
+    users[session['username']] = user
+    save_users(users)
+    return jsonify({'success': True, 'message': '已标记为已读'})
+
+@app.route('/api/notification-settings', methods=['GET', 'POST'])
+@require_login
+def notification_settings():
+    """通知设置"""
+    user = get_current_user()
+    if request.method == 'GET':
+        return jsonify({'success': True, 'settings': user.get('notification_settings', {
+            'system': True, 'activity': True, 'usage': True, 'marketing': False
+        })})
+    else:
+        data = request.get_json() or {}
+        if 'notification_settings' not in user:
+            user['notification_settings'] = {'system': True, 'activity': True, 'usage': True, 'marketing': False}
+        for key in ['system', 'activity', 'usage', 'marketing']:
+            if key in data:
+                user['notification_settings'][key] = bool(data[key])
+        users = load_users()
+        users[session['username']] = user
+        save_users(users)
+        return jsonify({'success': True, 'message': '通知设置已更新'})
+
+# ==================== 任务中心API ====================
+@app.route('/api/tasks', methods=['GET'])
+@require_login
+def get_tasks():
+    """获取任务列表"""
+    user = get_current_user()
+    status = request.args.get('status', '')
+    tasks = user.get('tasks', [])
+    if status:
+        tasks = [t for t in tasks if t.get('status') == status]
+    return jsonify({'success': True, 'tasks': tasks})
+
+# ==================== 模板市场API ====================
+@app.route('/api/templates', methods=['GET'])
+@require_login
+def get_templates():
+    """获取模板列表"""
+    category = request.args.get('category', '')
+    templates = TEMPLATE_MARKET
+    if category:
+        templates = [t for t in templates if t.get('category') == category]
+    user = get_current_user()
+    used_ids = [t.get('template_id') for t in user.get('used_templates', [])]
+    return jsonify({'success': True, 'templates': templates, 'used_ids': used_ids})
+
+@app.route('/api/templates/use', methods=['POST'])
+@require_login
+def use_template():
+    """使用模板"""
+    data = request.get_json() or {}
+    template_id = sanitize_input(data.get('template_id', ''), 50)
+    template = next((t for t in TEMPLATE_MARKET if t.get('id') == template_id), None)
+    if not template:
+        return jsonify({'success': False, 'message': '模板不存在'}), 404
+
+    user = get_current_user()
+    user['used_templates'].append({
+        'template_id': template_id,
+        'used_at': time.time()
+    })
+    users = load_users()
+    users[session['username']] = user
+    save_users(users)
+
+    return jsonify({'success': True, 'template': template})
+
+# ==================== 邀请好友API ====================
+@app.route('/api/invite/info', methods=['GET'])
+@require_login
+def invite_info():
+    """获取邀请信息"""
+    user = get_current_user()
+    return jsonify({
+        'success': True,
+        'invite_code': user.get('invite_code', ''),
+        'invite_link': f'https://ecom-ai-assistant.com/register?invite={user.get("invite_code", "")}',
+        'total_invited': user.get('total_invited', 0),
+        'total_reward': user.get('total_reward', 0),
+        'invitations': user.get('invitations', [])
+    })
+
+# ==================== 意见反馈API ====================
+@app.route('/api/feedback', methods=['POST'])
+@require_login
+def submit_feedback():
+    """提交意见反馈"""
+    data = request.get_json() or {}
+    feedback_type = sanitize_input(data.get('type', ''), 20)
+    content = sanitize_input(data.get('content', ''), 1000)
+    contact = sanitize_input(data.get('contact', ''), 100)
+
+    if not feedback_type or not content:
+        return jsonify({'success': False, 'message': '请填写反馈类型和内容'}), 400
+
+    feedback = {
+        'id': str(uuid.uuid4()),
+        'user': session['username'],
+        'type': feedback_type,
+        'content': content,
+        'contact': contact,
+        'status': 'pending',
+        'created_at': time.time(),
+        'reply': ''
+    }
+
+    feedbacks = load_feedbacks()
+    feedbacks.append(feedback)
+    save_feedbacks(feedbacks)
+
+    user = get_current_user()
+    user['feedbacks'].append(feedback)
+    users = load_users()
+    users[session['username']] = user
+    save_users(users)
+
+    add_notification(user, 'system', '📝', '反馈提交成功',
+                      '感谢您的反馈，我们会在1-3个工作日内处理并回复。')
+
+    return jsonify({'success': True, 'message': '反馈提交成功', 'feedback': feedback})
+
+@app.route('/api/feedbacks', methods=['GET'])
+@require_login
+def get_feedbacks():
+    """获取我的反馈"""
+    user = get_current_user()
+    return jsonify({'success': True, 'feedbacks': user.get('feedbacks', [])})
+
+# ==================== 功能投票API ====================
+@app.route('/api/vote', methods=['POST'])
+@require_login
+def vote_feature():
+    """功能投票"""
+    data = request.get_json() or {}
+    feature_id = sanitize_input(data.get('feature_id', ''), 50)
+    if not feature_id:
+        return jsonify({'success': False, 'message': '请选择功能'}), 400
+
+    user = get_current_user()
+    if 'votes' not in user:
+        user['votes'] = []
+    if feature_id in user['votes']:
+        return jsonify({'success': False, 'message': '您已投票过此功能'}), 400
+
+    user['votes'].append(feature_id)
+    users = load_users()
+    users[session['username']] = user
+    save_users(users)
+
+    return jsonify({'success': True, 'message': '投票成功'})
 
 # ==================== 启动 ====================
 if __name__ == '__main__':

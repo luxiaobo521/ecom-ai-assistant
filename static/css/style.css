@@ -4584,3 +4584,41 @@ ul, ol {
   display: none !important;
 }
 
+
+
+/* 登录/注册方式切换 */
+.auth-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 24px;
+  border-bottom: 2px solid var(--gray-200);
+}
+.auth-tab {
+  flex: 1;
+  text-align: center;
+  padding: 12px 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gray-500);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.auth-tab:hover {
+  color: var(--primary-600);
+}
+.auth-tab.active {
+  color: var(--primary-600);
+  font-weight: 600;
+}
+.auth-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: var(--primary-600);
+  border-radius: 2px;
+}
+

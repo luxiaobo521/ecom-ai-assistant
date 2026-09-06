@@ -1511,6 +1511,439 @@ def vote_feature():
 
     return jsonify({'success': True, 'message': '投票成功'})
 
+# ==================== 后台管理系统 ====================
+ADMIN_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ADMIN_USERS_FILE = os.path.join(ADMIN_BASE_DIR, 'users.json')
+ADMIN_ORDERS_FILE = os.path.join(ADMIN_BASE_DIR, 'orders.json')
+ADMIN_FEEDBACKS_FILE = os.path.join(ADMIN_BASE_DIR, 'feedbacks.json')
+ADMIN_LOG_FILE = os.path.join(ADMIN_BASE_DIR, 'admin_logs.json')
+ADMIN_SETTINGS_FILE = os.path.join(ADMIN_BASE_DIR, 'admin_settings.json')
+
+ADMIN_DEFAULT = {'username': 'admin', 'password': 'Admin123456', 'role': 'superadmin'}
+ADMIN_PLANS = {'free': {'name': '免费版', 'price': 0}, 'pro': {'name': '专业版', 'price': 39}, 'ultimate': {'name': '旗舰版', 'price': 99}, 'enterprise': {'name': '企业版', 'price': 1999}}
+
+def admin_load_json(filepath, default=None):
+    if default is None:
+        default = {} if filepath.endswith('users.json') else []
+    if os.path.exists(filepath):
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            return default
+    return default
+
+def admin_save_json(filepath, data):
+    with open(filepath, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+def admin_load_settings():
+    default = {'site_name': '电商AI运营助手', 'site_status': 'online', 'registration_enabled': True, 'ai_generation_enabled': True, 'payment_enabled': True, 'maintenance_message': '系统维护中，请稍后访问', 'default_plan': 'free', 'plans': ADMIN_PLANS, 'contact_email': '3594438759@qq.com', 'icp_number': ''}
+    if os.path.exists(ADMIN_SETTINGS_FILE):
+        try:
+            with open(ADMIN_SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                saved = json.load(f)
+                default.update(saved)
+        except Exception:
+            pass
+    return default
+
+def admin_add_log(action, detail=''):
+    logs = admin_load_json(ADMIN_LOG_FILE, [])
+    logs.insert(0, {'id': str(uuid.uuid4()), 'admin': session.get('admin_username', 'unknown'), 'action': action, 'detail': detail, 'ip': request.remote_addr or 'unknown', 'time': time.time()})
+    if len(logs) > 500:
+        logs = logs[:500]
+    admin_save_json(ADMIN_LOG_FILE, logs)
+
+def admin_require(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'admin_logged_in' not in session or not session['admin_logged_in']:
+            return jsonify({'success': False, 'need_login': True, 'message': '请先登录'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+def admin_mask_phone(phone):
+    if not phone or len(phone) != 11:
+        return phone
+    return phone[:3] + '****' + phone[7:]
+
+@app.route('/admin')
+def admin_page():
+    return render_template('admin.html')
+
+@app.route('/api/admin/health')
+def admin_health():
+    return jsonify({'status': 'ok', 'time': time.time()})
+
+@app.route('/api/admin/login', methods=['POST'])
+def admin_login_api():
+    data = request.get_json() or {}
+    username = (data.get('username') or '').strip()
+    password = data.get('password') or ''
+    if not username or not password:
+        return jsonify({'success': False, 'message': '请输入用户名和密码'}), 400
+    if username == ADMIN_DEFAULT['username'] and password == ADMIN_DEFAULT['password']:
+        session['admin_logged_in'] = True
+        session['admin_username'] = username
+        session['admin_role'] = ADMIN_DEFAULT['role']
+        session.permanent = True
+        admin_add_log('登录', '管理员登录成功')
+        return jsonify({'success': True, 'message': '登录成功', 'username': username, 'role': ADMIN_DEFAULT['role']})
+    return jsonify({'success': False, 'message': '用户名或密码错误'}), 401
+
+@app.route('/api/admin/logout', methods=['POST'])
+def admin_logout_api():
+    admin_add_log('登出', '管理员登出')
+    session.pop('admin_logged_in', None)
+    session.pop('admin_username', None)
+    session.pop('admin_role', None)
+    return jsonify({'success': True, 'message': '已退出登录'})
+
+@app.route('/api/admin/info')
+def admin_info_api():
+    if 'admin_logged_in' not in session:
+        return jsonify({'logged_in': False})
+    return jsonify({'logged_in': True, 'username': session.get('admin_username'), 'role': session.get('admin_role')})
+
+@app.route('/api/admin/dashboard')
+@admin_require
+def admin_dashboard_api():
+    users = admin_load_json(ADMIN_USERS_FILE, {})
+    orders = admin_load_json(ADMIN_ORDERS_FILE, [])
+    feedbacks = admin_load_json(ADMIN_FEEDBACKS_FILE, [])
+    now = time.time()
+    today_start = now - (now % 86400)
+    week_start = now - 7 * 86400
+    total_users = len(users)
+    today_new_users = sum(1 for u in users.values() if u.get('created_at', 0) >= today_start)
+    active_users = sum(1 for u in users.values() if u.get('last_login', 0) >= week_start)
+    paid_users = sum(1 for u in users.values() if u.get('plan') != 'free')
+    paid_orders = [o for o in orders if o.get('status') == 'paid']
+    total_revenue = sum(o.get('final_price', 0) for o in paid_orders)
+    today_revenue = sum(o.get('final_price', 0) for o in paid_orders if o.get('paid_at', 0) >= today_start)
+    total_ai_calls = sum(len(u.get('ai_history', [])) for u in users.values())
+    total_shops = sum(len(u.get('bound_shops', [])) for u in users.values())
+    pending_feedbacks = sum(1 for f in feedbacks if f.get('status') == 'pending')
+    user_growth = []
+    for i in range(6, -1, -1):
+        day_start = today_start - i * 86400
+        day_end = day_start + 86400
+        count = sum(1 for u in users.values() if day_start <= u.get('created_at', 0) < day_end)
+        user_growth.append({'date': time.strftime('%m-%d', time.localtime(day_start)), 'count': count})
+    revenue_trend = []
+    for i in range(6, -1, -1):
+        day_start = today_start - i * 86400
+        day_end = day_start + 86400
+        rev = sum(o.get('final_price', 0) for o in paid_orders if day_start <= o.get('paid_at', 0) < day_end)
+        revenue_trend.append({'date': time.strftime('%m-%d', time.localtime(day_start)), 'revenue': rev})
+    plan_distribution = {}
+    for plan_key in ADMIN_PLANS:
+        plan_distribution[plan_key] = {'name': ADMIN_PLANS[plan_key]['name'], 'count': sum(1 for u in users.values() if u.get('plan') == plan_key)}
+    return jsonify({'success': True, 'stats': {'total_users': total_users, 'today_new_users': today_new_users, 'active_users': active_users, 'paid_users': paid_users, 'paid_rate': round(paid_users / total_users * 100, 1) if total_users > 0 else 0, 'total_revenue': round(total_revenue, 2), 'today_revenue': round(today_revenue, 2), 'total_ai_calls': total_ai_calls, 'total_shops': total_shops, 'pending_feedbacks': pending_feedbacks}, 'user_growth': user_growth, 'revenue_trend': revenue_trend, 'plan_distribution': plan_distribution})
+
+@app.route('/api/admin/users')
+@admin_require
+def admin_users_api():
+    users = admin_load_json(ADMIN_USERS_FILE, {})
+    page = int(request.args.get('page', 1))
+    page_size = int(request.args.get('page_size', 20))
+    search = request.args.get('search', '').strip()
+    plan_filter = request.args.get('plan', '').strip()
+    status_filter = request.args.get('status', '').strip()
+    user_list = []
+    for phone, user in users.items():
+        if search and search not in phone and search not in user.get('nickname', '') and search not in user.get('email', ''):
+            continue
+        if plan_filter and user.get('plan') != plan_filter:
+            continue
+        if status_filter == 'disabled' and not user.get('disabled'):
+            continue
+        if status_filter == 'active' and user.get('disabled'):
+            continue
+        user_list.append({'phone': phone, 'phone_masked': admin_mask_phone(phone), 'nickname': user.get('nickname', ''), 'email': user.get('email', ''), 'plan': user.get('plan', 'free'), 'plan_name': ADMIN_PLANS.get(user.get('plan', 'free'), {}).get('name', '未知'), 'created_at': user.get('created_at', 0), 'last_login': user.get('last_login', 0), 'bound_shops': len(user.get('bound_shops', [])), 'ai_history_count': len(user.get('ai_history', [])), 'disabled': user.get('disabled', False)})
+    user_list.sort(key=lambda x: x['created_at'], reverse=True)
+    total = len(user_list)
+    start = (page - 1) * page_size
+    end = start + page_size
+    return jsonify({'success': True, 'users': user_list[start:end], 'total': total, 'page': page, 'page_size': page_size, 'total_pages': (total + page_size - 1) // page_size})
+
+@app.route('/api/admin/users/<phone>')
+@admin_require
+def admin_user_detail_api(phone):
+    users = admin_load_json(ADMIN_USERS_FILE, {})
+    user = users.get(phone)
+    if not user:
+        return jsonify({'success': False, 'message': '用户不存在'}), 404
+    orders = admin_load_json(ADMIN_ORDERS_FILE, [])
+    user_orders = [o for o in orders if o.get('user') == phone]
+    safe_user = {k: v for k, v in user.items() if k != 'password'}
+    return jsonify({'success': True, 'user': safe_user, 'orders': user_orders, 'ai_history': user.get('ai_history', [])[:20], 'notifications': user.get('notifications', [])[:20], 'bound_shops': user.get('bound_shops', [])})
+
+@app.route('/api/admin/users/<phone>/disable', methods=['POST'])
+@admin_require
+def admin_disable_user_api(phone):
+    users = admin_load_json(ADMIN_USERS_FILE, {})
+    if phone not in users:
+        return jsonify({'success': False, 'message': '用户不存在'}), 404
+    users[phone]['disabled'] = True
+    admin_save_json(ADMIN_USERS_FILE, users)
+    admin_add_log('禁用用户', f'禁用用户 {admin_mask_phone(phone)}')
+    return jsonify({'success': True, 'message': '用户已禁用'})
+
+@app.route('/api/admin/users/<phone>/enable', methods=['POST'])
+@admin_require
+def admin_enable_user_api(phone):
+    users = admin_load_json(ADMIN_USERS_FILE, {})
+    if phone not in users:
+        return jsonify({'success': False, 'message': '用户不存在'}), 404
+    users[phone]['disabled'] = False
+    admin_save_json(ADMIN_USERS_FILE, users)
+    admin_add_log('启用用户', f'启用用户 {admin_mask_phone(phone)}')
+    return jsonify({'success': True, 'message': '用户已启用'})
+
+@app.route('/api/admin/users/<phone>/reset-password', methods=['POST'])
+@admin_require
+def admin_reset_password_api(phone):
+    data = request.get_json() or {}
+    new_password = data.get('new_password', 'Reset123456')
+    users = admin_load_json(ADMIN_USERS_FILE, {})
+    if phone not in users:
+        return jsonify({'success': False, 'message': '用户不存在'}), 404
+    users[phone]['password'] = hash_password(new_password)
+    admin_save_json(ADMIN_USERS_FILE, users)
+    admin_add_log('重置密码', f'重置用户 {admin_mask_phone(phone)} 的密码')
+    return jsonify({'success': True, 'message': '密码已重置', 'new_password': new_password})
+
+@app.route('/api/admin/users/<phone>/change-plan', methods=['POST'])
+@admin_require
+def admin_change_plan_api(phone):
+    data = request.get_json() or {}
+    new_plan = data.get('plan', 'free')
+    if new_plan not in ADMIN_PLANS:
+        return jsonify({'success': False, 'message': '无效的套餐'}), 400
+    users = admin_load_json(ADMIN_USERS_FILE, {})
+    if phone not in users:
+        return jsonify({'success': False, 'message': '用户不存在'}), 404
+    old_plan = users[phone].get('plan', 'free')
+    users[phone]['plan'] = new_plan
+    if new_plan != 'free':
+        users[phone]['member_expire'] = time.time() + 365 * 86400
+    admin_save_json(ADMIN_USERS_FILE, users)
+    admin_add_log('修改套餐', f'用户 {admin_mask_phone(phone)} 从 {old_plan} 改为 {new_plan}')
+    return jsonify({'success': True, 'message': '套餐已修改'})
+
+@app.route('/api/admin/users/<phone>', methods=['DELETE'])
+@admin_require
+def admin_delete_user_api(phone):
+    users = admin_load_json(ADMIN_USERS_FILE, {})
+    if phone not in users:
+        return jsonify({'success': False, 'message': '用户不存在'}), 404
+    del users[phone]
+    admin_save_json(ADMIN_USERS_FILE, users)
+    admin_add_log('删除用户', f'删除用户 {admin_mask_phone(phone)}')
+    return jsonify({'success': True, 'message': '用户已删除'})
+
+@app.route('/api/admin/orders')
+@admin_require
+def admin_orders_api():
+    orders = admin_load_json(ADMIN_ORDERS_FILE, [])
+    page = int(request.args.get('page', 1))
+    page_size = int(request.args.get('page_size', 20))
+    search = request.args.get('search', '').strip()
+    status_filter = request.args.get('status', '').strip()
+    filtered = []
+    for order in orders:
+        if search and search not in order.get('id', '') and search not in order.get('user', ''):
+            continue
+        if status_filter and order.get('status') != status_filter:
+            continue
+        filtered.append(order)
+    filtered.sort(key=lambda x: x.get('created_at', 0), reverse=True)
+    total = len(filtered)
+    start = (page - 1) * page_size
+    end = start + page_size
+    total_revenue = sum(o.get('final_price', 0) for o in orders if o.get('status') == 'paid')
+    pending_count = sum(1 for o in orders if o.get('status') == 'pending')
+    refunded_count = sum(1 for o in orders if o.get('status') == 'refunded')
+    return jsonify({'success': True, 'orders': filtered[start:end], 'total': total, 'page': page, 'page_size': page_size, 'total_pages': (total + page_size - 1) // page_size, 'summary': {'total_revenue': round(total_revenue, 2), 'pending_count': pending_count, 'refunded_count': refunded_count, 'total_count': len(orders)}})
+
+@app.route('/api/admin/orders/<order_id>/refund', methods=['POST'])
+@admin_require
+def admin_refund_order_api(order_id):
+    orders = admin_load_json(ADMIN_ORDERS_FILE, [])
+    for order in orders:
+        if order.get('id') == order_id:
+            if order.get('status') != 'paid':
+                return jsonify({'success': False, 'message': '只有已支付订单才能退款'}), 400
+            order['status'] = 'refunded'
+            order['refunded_at'] = time.time()
+            admin_save_json(ADMIN_ORDERS_FILE, orders)
+            users = admin_load_json(ADMIN_USERS_FILE, {})
+            user_phone = order.get('user')
+            if user_phone and user_phone in users:
+                users[user_phone]['plan'] = 'free'
+                users[user_phone]['member_expire'] = 0
+                admin_save_json(ADMIN_USERS_FILE, users)
+            admin_add_log('订单退款', f'订单 {order_id} 已退款')
+            return jsonify({'success': True, 'message': '订单已退款，用户会员已降级'})
+    return jsonify({'success': False, 'message': '订单不存在'}), 404
+
+@app.route('/api/admin/orders/<order_id>/mark-paid', methods=['POST'])
+@admin_require
+def admin_mark_paid_api(order_id):
+    orders = admin_load_json(ADMIN_ORDERS_FILE, [])
+    for order in orders:
+        if order.get('id') == order_id:
+            if order.get('status') == 'paid':
+                return jsonify({'success': False, 'message': '订单已支付'}), 400
+            order['status'] = 'paid'
+            order['paid_at'] = time.time()
+            order['payment_method'] = 'manual'
+            admin_save_json(ADMIN_ORDERS_FILE, orders)
+            users = admin_load_json(ADMIN_USERS_FILE, {})
+            user_phone = order.get('user')
+            if user_phone and user_phone in users:
+                users[user_phone]['plan'] = order.get('plan', 'pro')
+                users[user_phone]['member_expire'] = time.time() + 30 * 86400
+                admin_save_json(ADMIN_USERS_FILE, users)
+            admin_add_log('手动标记支付', f'订单 {order_id} 标记为已支付')
+            return jsonify({'success': True, 'message': '订单已标记为已支付，会员已开通'})
+    return jsonify({'success': False, 'message': '订单不存在'}), 404
+
+@app.route('/api/admin/feedbacks')
+@admin_require
+def admin_feedbacks_api():
+    feedbacks = admin_load_json(ADMIN_FEEDBACKS_FILE, [])
+    page = int(request.args.get('page', 1))
+    page_size = int(request.args.get('page_size', 20))
+    status_filter = request.args.get('status', '').strip()
+    type_filter = request.args.get('type', '').strip()
+    filtered = []
+    for fb in feedbacks:
+        if status_filter and fb.get('status') != status_filter:
+            continue
+        if type_filter and fb.get('type') != type_filter:
+            continue
+        filtered.append(fb)
+    filtered.sort(key=lambda x: x.get('created_at', 0), reverse=True)
+    total = len(filtered)
+    start = (page - 1) * page_size
+    end = start + page_size
+    return jsonify({'success': True, 'feedbacks': filtered[start:end], 'total': total, 'page': page, 'page_size': page_size, 'total_pages': (total + page_size - 1) // page_size, 'pending_count': sum(1 for f in feedbacks if f.get('status') == 'pending')})
+
+@app.route('/api/admin/feedbacks/<feedback_id>/reply', methods=['POST'])
+@admin_require
+def admin_reply_feedback_api(feedback_id):
+    data = request.get_json() or {}
+    reply = data.get('reply', '').strip()
+    if not reply:
+        return jsonify({'success': False, 'message': '请输入回复内容'}), 400
+    feedbacks = admin_load_json(ADMIN_FEEDBACKS_FILE, [])
+    for fb in feedbacks:
+        if fb.get('id') == feedback_id:
+            fb['reply'] = reply
+            fb['status'] = 'replied'
+            fb['replied_at'] = time.time()
+            fb['replied_by'] = session.get('admin_username', 'admin')
+            admin_save_json(ADMIN_FEEDBACKS_FILE, feedbacks)
+            admin_add_log('回复反馈', f'反馈 {feedback_id} 已回复')
+            return jsonify({'success': True, 'message': '回复已提交'})
+    return jsonify({'success': False, 'message': '反馈不存在'}), 404
+
+@app.route('/api/admin/push-notification', methods=['POST'])
+@admin_require
+def admin_push_notification_api():
+    data = request.get_json() or {}
+    title = data.get('title', '').strip()
+    content = data.get('content', '').strip()
+    target = data.get('target', 'all')
+    target_phone = data.get('target_phone', '').strip()
+    n_type = data.get('type', 'system')
+    icon = data.get('icon', '📢')
+    if not title or not content:
+        return jsonify({'success': False, 'message': '请填写标题和内容'}), 400
+    users = admin_load_json(ADMIN_USERS_FILE, {})
+    sent_count = 0
+    if target == 'all':
+        for phone, user in users.items():
+            if 'notifications' not in user:
+                user['notifications'] = []
+            user['notifications'].insert(0, {'id': str(uuid.uuid4()), 'type': n_type, 'icon': icon, 'title': title, 'content': content, 'read': False, 'created_at': time.time()})
+            if len(user['notifications']) > 100:
+                user['notifications'] = user['notifications'][:100]
+            sent_count += 1
+        admin_save_json(ADMIN_USERS_FILE, users)
+    elif target_phone and target_phone in users:
+        user = users[target_phone]
+        if 'notifications' not in user:
+            user['notifications'] = []
+        user['notifications'].insert(0, {'id': str(uuid.uuid4()), 'type': n_type, 'icon': icon, 'title': title, 'content': content, 'read': False, 'created_at': time.time()})
+        admin_save_json(ADMIN_USERS_FILE, users)
+        sent_count = 1
+    admin_add_log('消息推送', f'推送通知给{sent_count}个用户: {title}')
+    return jsonify({'success': True, 'message': f'通知已推送给 {sent_count} 个用户', 'sent_count': sent_count})
+
+@app.route('/api/admin/ai-content')
+@admin_require
+def admin_ai_content_api():
+    users = admin_load_json(ADMIN_USERS_FILE, {})
+    page = int(request.args.get('page', 1))
+    page_size = int(request.args.get('page_size', 20))
+    type_filter = request.args.get('type', '').strip()
+    search = request.args.get('search', '').strip()
+    all_content = []
+    for phone, user in users.items():
+        for item in user.get('ai_history', []):
+            if type_filter and item.get('type') != type_filter:
+                continue
+            if search and search not in item.get('title', '') and search not in item.get('result', ''):
+                continue
+            all_content.append({'id': item.get('id'), 'user_phone': phone, 'user_masked': admin_mask_phone(phone), 'nickname': user.get('nickname', ''), 'type': item.get('type'), 'title': item.get('title', ''), 'result': item.get('result', '')[:500], 'favorite': item.get('favorite', False), 'created_at': item.get('created_at', 0)})
+    all_content.sort(key=lambda x: x['created_at'], reverse=True)
+    total = len(all_content)
+    start = (page - 1) * page_size
+    end = start + page_size
+    return jsonify({'success': True, 'contents': all_content[start:end], 'total': total, 'page': page, 'page_size': page_size, 'total_pages': (total + page_size - 1) // page_size})
+
+@app.route('/api/admin/ai-content/<content_id>/delete', methods=['POST'])
+@admin_require
+def admin_delete_content_api(content_id):
+    users = admin_load_json(ADMIN_USERS_FILE, {})
+    for phone, user in users.items():
+        original_len = len(user.get('ai_history', []))
+        user['ai_history'] = [h for h in user.get('ai_history', []) if h.get('id') != content_id]
+        if len(user['ai_history']) < original_len:
+            admin_save_json(ADMIN_USERS_FILE, users)
+            admin_add_log('删除内容', f'删除用户 {admin_mask_phone(phone)} 的AI生成内容 {content_id}')
+            return jsonify({'success': True, 'message': '内容已删除'})
+    return jsonify({'success': False, 'message': '内容不存在'}), 404
+
+@app.route('/api/admin/settings', methods=['GET', 'POST'])
+@admin_require
+def admin_settings_api():
+    if request.method == 'GET':
+        return jsonify({'success': True, 'settings': admin_load_settings()})
+    else:
+        data = request.get_json() or {}
+        settings = admin_load_settings()
+        for key in ['site_name', 'site_status', 'registration_enabled', 'ai_generation_enabled', 'payment_enabled', 'maintenance_message', 'default_plan', 'contact_email', 'icp_number']:
+            if key in data:
+                settings[key] = data[key]
+        admin_save_json(ADMIN_SETTINGS_FILE, settings) if False else admin_save_json(ADMIN_SETTINGS_FILE, settings)
+        admin_add_log('修改设置', '修改系统设置')
+        return jsonify({'success': True, 'message': '设置已保存', 'settings': settings})
+
+@app.route('/api/admin/logs')
+@admin_require
+def admin_logs_api():
+    logs = admin_load_json(ADMIN_LOG_FILE, [])
+    page = int(request.args.get('page', 1))
+    page_size = int(request.args.get('page_size', 50))
+    start = (page - 1) * page_size
+    end = start + page_size
+    return jsonify({'success': True, 'logs': logs[start:end], 'total': len(logs), 'page': page, 'page_size': page_size})
+
 # ==================== 启动 ====================
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

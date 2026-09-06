@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电商AI运营助手 - 管理后台</title>
+<link rel="stylesheet" href="/static/admin/css/style.css">
+</head>
+<body>
+
+<!-- 加载动画 -->
+<div id="pageLoader" class="page-loader">
+  <div class="loader-spinner"></div>
+  <div class="loader-text">管理后台加载中...</div>
+</div>
+
+<!-- 登录页 -->
+<div id="loginPage" class="login-page">
+  <div class="login-container">
+    <div class="login-logo">
+      <div class="login-icon">🛒</div>
+      <h1>电商AI运营助手</h1>
+      <p>管理后台 Admin Panel</p>
+    </div>
+    <div class="login-form">
+      <div class="form-group">
+        <label>管理员账号</label>
+        <input type="text" id="adminUsername" placeholder="请输入管理员账号" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" id="adminPassword" placeholder="请输入密码" autocomplete="current-password">
+      </div>
+      <button class="btn-login" id="adminLoginBtn" onclick="adminLogin()">登 录</button>
+      <div class="login-hint">默认账号：admin / Admin123456</div>
+    </div>
+  </div>
+</div>
+
+<!-- 主界面 -->
+<div id="mainApp" class="main-app" style="display:none;">
+  <!-- 侧边栏 -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">🛒</div>
+      <div class="sidebar-title">
+        <div class="title-main">电商AI助手</div>
+        <div class="title-sub">管理后台</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group">
+        <div class="nav-group-title">数据概览</div>
+        <a class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard', this)">
+          <span class="nav-icon">📊</span><span class="nav-text">数据总览</span>
+        </a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">用户与订单</div>
+        <a class="nav-item" data-page="users" onclick="switchPage('users', this)">
+          <span class="nav-icon">👥</span><span class="nav-text">用户管理</span>
+          <span class="nav-badge" id="userCountBadge">0</span>
+        </a>
+        <a class="nav-item" data-page="orders" onclick="switchPage('orders', this)">
+          <span class="nav-icon">🧾</span><span class="nav-text">订单管理</span>
+        </a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">内容与反馈</div>
+        <a class="nav-item" data-page="content" onclick="switchPage('content', this)">
+          <span class="nav-icon">📝</span><span class="nav-text">内容审核</span>
+        </a>
+        <a class="nav-item" data-page="feedbacks" onclick="switchPage('feedbacks', this)">
+          <span class="nav-icon">💬</span><span class="nav-text">反馈管理</span>
+          <span class="nav-badge badge-danger" id="feedbackBadge">0</span>
+        </a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">运营工具</div>
+        <a class="nav-item" data-page="push" onclick="switchPage('push', this)">
+          <span class="nav-icon">📢</span><span class="nav-text">消息推送</span>
+        </a>
+        <a class="nav-item" data-page="settings" onclick="switchPage('settings', this)">
+          <span class="nav-icon">⚙️</span><span class="nav-text">系统设置</span>
+        </a>
+        <a class="nav-item" data-page="logs" onclick="switchPage('logs', this)">
+          <span class="nav-icon">📋</span><span class="nav-text">操作日志</span>
+        </a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="admin-info">
+        <div class="admin-avatar">A</div>
+        <div class="admin-detail">
+          <div class="admin-name" id="adminNameDisplay">admin</div>
+          <div class="admin-role">超级管理员</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="adminLogout()">退出登录</button>
+    </div>
+  </aside>
+
+  <!-- 主内容区 -->
+  <main class="main-content">
+    <!-- 顶部栏 -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h2 class="page-title" id="currentPageTitle">数据总览</h2>
+        <span class="page-subtitle" id="currentPageSubtitle">实时监控网站运营数据</span>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-time" id="currentTime"></div>
+        <div class="topbar-status" id="siteStatusBadge">
+          <span class="status-dot status-online"></span> 网站正常
+        </div>
+      </div>
+    </header>
+
+    <!-- 页面内容容器 -->
+    <div class="page-container">
+
+      <!-- 数据总览 -->
+      <div id="page-dashboard" class="page active">
+        <div class="stats-grid">
+          <div class="stat-card stat-primary">
+            <div class="stat-icon">👥</div>
+            <div class="stat-info">
+              <div class="stat-value" id="statTotalUsers">0</div>
+              <div class="stat-label">总用户数</div>
+              <div class="stat-change" id="statTodayNew">今日新增 0</div>
+            </div>
+          </div>
+          <div class="stat-card stat-success">
+            <div class="stat-icon">💰</div>
+            <div class="stat-info">
+              <div class="stat-value" id="statTotalRevenue">¥0</div>
+              <div class="stat-label">总收入</div>
+              <div class="stat-change" id="statTodayRevenue">今日收入 ¥0</div>
+            </div>
+          </div>
+          <div class="stat-card stat-warning">
+            <div class="stat-icon">💎</div>
+            <div class="stat-info">
+              <div class="stat-value" id="statPaidUsers">0</div>
+              <div class="stat-label">付费用户</div>
+              <div class="stat-change" id="statPaidRate">付费率 0%</div>
+            </div>
+          </div>
+          <div class="stat-card stat-info">
+            <div class="stat-icon">🤖</div>
+            <div class="stat-info">
+              <div class="stat-value" id="statAiCalls">0</div>
+              <div class="stat-label">AI调用次数</div>
+              <div class="stat-change" id="statActiveUsers">活跃用户 0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-row">
+          <div class="dashboard-card dashboard-chart">
+            <div class="card-header">
+              <h3>📈 用户增长趋势（近7天）</h3>
+            </div>
+            <div class="card-body">
+              <div id="userGrowthChart" class="chart-container"></div>
+            </div>
+          </div>
+          <div class="dashboard-card dashboard-chart">
+            <div class="card-header">
+              <h3>💵 收入趋势（近7天）</h3>
+            </div>
+            <div class="card-body">
+              <div id="revenueChart" class="chart-container"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-row">
+          <div class="dashboard-card">
+            <div class="card-header">
+              <h3>💎 会员分布</h3>
+              <button class="btn-refresh" onclick="loadDashboard()">🔄 刷新</button>
+            </div>
+            <div class="card-body">
+              <div id="planDistribution" class="plan-distribution"></div>
+            </div>
+          </div>
+          <div class="dashboard-card">
+            <div class="card-header">
+              <h3>⚡ 快捷操作</h3>
+            </div>
+            <div class="card-body">
+              <div class="quick-actions">
+                <button class="quick-action-btn" onclick="switchPage('users', document.querySelector('[data-page=users]'))">
+                  <span class="qa-icon">👥</span><span>用户管理</span>
+                </button>
+                <button class="quick-action-btn" onclick="switchPage('orders', document.querySelector('[data-page=orders]'))">
+                  <span class="qa-icon">🧾</span><span>订单管理</span>
+                </button>
+                <button class="quick-action-btn" onclick="switchPage('push', document.querySelector('[data-page=push]'))">
+                  <span class="qa-icon">📢</span><span>消息推送</span>
+                </button>
+                <button class="quick-action-btn" onclick="switchPage('feedbacks', document.querySelector('[data-page=feedbacks]'))">
+                  <span class="qa-icon">💬</span><span>反馈处理</span>
+                </button>
+                <button class="quick-action-btn" onclick="switchPage('settings', document.querySelector('[data-page=settings]'))">
+                  <span class="qa-icon">⚙️</span><span>系统设置</span>
+                </button>
+                <button class="quick-action-btn" onclick="switchPage('content', document.querySelector('[data-page=content]'))">
+                  <span class="qa-icon">📝</span><span>内容审核</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 用户管理 -->
+      <div id="page-users" class="page">
+        <div class="filter-bar">
+          <div class="filter-left">
+            <input type="text" class="filter-input" id="userSearch" placeholder="搜索手机号/昵称/邮箱..." onkeyup="if(event.key==='Enter')loadUsers()">
+            <select class="filter-select" id="userPlanFilter" onchange="loadUsers()">
+              <option value="">全部套餐</option>
+              <option value="free">免费版</option>
+              <option value="pro">专业版</option>
+              <option value="ultimate">旗舰版</option>
+              <option value="enterprise">企业版</option>
+            </select>
+            <select class="filter-select" id="userStatusFilter" onchange="loadUsers()">
+              <option value="">全部状态</option>
+              <option value="active">正常</option>
+              <option value="disabled">已禁用</option>
+            </select>
+            <button class="btn-filter" onclick="loadUsers()">🔍 搜索</button>
+          </div>
+          <div class="filter-right">
+            <span class="result-count" id="userResultCount">共 0 条</span>
+          </div>
+        </div>
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>手机号</th><th>昵称</th><th>套餐</th><th>绑定店铺</th>
+                <th>AI生成</th><th>注册时间</th><th>最后登录</th><th>状态</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody">
+              <tr><td colspan="9" class="table-loading">加载中...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="userPagination"></div>
+      </div>
+
+      <!-- 订单管理 -->
+      <div id="page-orders" class="page">
+        <div class="stats-row">
+          <div class="mini-stat"><span class="mini-label">总订单</span><span class="mini-value" id="orderTotalCount">0</span></div>
+          <div class="mini-stat"><span class="mini-label">总收入</span><span class="mini-value mini-success" id="orderTotalRevenue">¥0</span></div>
+          <div class="mini-stat"><span class="mini-label">待支付</span><span class="mini-value mini-warning" id="orderPendingCount">0</span></div>
+          <div class="mini-stat"><span class="mini-label">已退款</span><span class="mini-value mini-danger" id="orderRefundedCount">0</span></div>
+        </div>
+        <div class="filter-bar">
+          <div class="filter-left">
+            <input type="text" class="filter-input" id="orderSearch" placeholder="搜索订单号/用户手机号..." onkeyup="if(event.key==='Enter')loadOrders()">
+            <select class="filter-select" id="orderStatusFilter" onchange="loadOrders()">
+              <option value="">全部状态</option>
+              <option value="pending">待支付</option>
+              <option value="paid">已支付</option>
+              <option value="refunded">已退款</option>
+            </select>
+            <button class="btn-filter" onclick="loadOrders()">🔍 搜索</button>
+          </div>
+        </div>
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr><th>订单号</th><th>用户</th><th>套餐</th><th>周期</th><th>金额</th><th>状态</th><th>创建时间</th><th>操作</th></tr>
+            </thead>
+            <tbody id="orderTableBody">
+              <tr><td colspan="8" class="table-loading">加载中...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="orderPagination"></div>
+      </div>
+
+      <!-- 内容审核 -->
+      <div id="page-content" class="page">
+        <div class="filter-bar">
+          <div class="filter-left">
+            <input type="text" class="filter-input" id="contentSearch" placeholder="搜索内容..." onkeyup="if(event.key==='Enter')loadContent()">
+            <select class="filter-select" id="contentTypeFilter" onchange="loadContent()">
+              <option value="">全部类型</option>
+              <option value="title">标题生成</option>
+              <option value="detail">详情页</option>
+              <option value="service">客服话术</option>
+              <option value="competitor">竞品分析</option>
+              <option value="diagnosis">运营诊断</option>
+              <option value="report">报表生成</option>
+            </select>
+            <button class="btn-filter" onclick="loadContent()">🔍 搜索</button>
+          </div>
+        </div>
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr><th>用户</th><th>类型</th><th>标题</th><th>内容预览</th><th>生成时间</th><th>操作</th></tr>
+            </thead>
+            <tbody id="contentTableBody">
+              <tr><td colspan="6" class="table-loading">加载中...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="contentPagination"></div>
+      </div>
+
+      <!-- 反馈管理 -->
+      <div id="page-feedbacks" class="page">
+        <div class="filter-bar">
+          <div class="filter-left">
+            <select class="filter-select" id="feedbackStatusFilter" onchange="loadFeedbacks()">
+              <option value="">全部状态</option>
+              <option value="pending">待处理</option>
+              <option value="replied">已回复</option>
+            </select>
+            <select class="filter-select" id="feedbackTypeFilter" onchange="loadFeedbacks()">
+              <option value="">全部类型</option>
+              <option value="bug">Bug反馈</option>
+              <option value="feature">功能建议</option>
+              <option value="experience">体验问题</option>
+              <option value="other">其他</option>
+            </select>
+            <button class="btn-filter" onclick="loadFeedbacks()">🔍 筛选</button>
+          </div>
+        </div>
+        <div id="feedbackList" class="feedback-list">
+          <div class="table-loading">加载中...</div>
+        </div>
+        <div class="pagination" id="feedbackPagination"></div>
+      </div>
+
+      <!-- 消息推送 -->
+      <div id="page-push" class="page">
+        <div class="form-card">
+          <div class="card-header"><h3>📢 发送系统通知</h3></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label>推送对象 *</label>
+              <div class="radio-group">
+                <label class="radio-label"><input type="radio" name="pushTarget" value="all" checked onchange="togglePushTarget()"> 全部用户</label>
+                <label class="radio-label"><input type="radio" name="pushTarget" value="single" onchange="togglePushTarget()"> 指定用户</label>
+              </div>
+            </div>
+            <div class="form-group" id="targetPhoneGroup" style="display:none;">
+              <label>目标用户手机号 *</label>
+              <input type="text" class="form-input" id="pushTargetPhone" placeholder="请输入用户手机号">
+            </div>
+            <div class="form-group">
+              <label>通知类型</label>
+              <select class="form-input" id="pushType">
+                <option value="system">系统通知</option>
+                <option value="activity">活动通知</option>
+                <option value="usage">使用提醒</option>
+                <option value="security">安全提醒</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>通知图标</label>
+              <select class="form-input" id="pushIcon">
+                <option value="📢">📢 系统</option>
+                <option value="🎁">🎁 活动</option>
+                <option value="🔔">🔔 提醒</option>
+                <option value="💎">💎 会员</option>
+                <option value="🎉">🎉 庆祝</option>
+                <option value="⚠️">⚠️ 警告</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>通知标题 *</label>
+              <input type="text" class="form-input" id="pushTitle" placeholder="请输入通知标题" maxlength="50">
+            </div>
+            <div class="form-group">
+              <label>通知内容 *</label>
+              <textarea class="form-textarea" id="pushContent" rows="4" placeholder="请输入通知内容" maxlength="500"></textarea>
+            </div>
+            <button class="btn-submit" onclick="sendPushNotification()">📤 发送通知</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 系统设置 -->
+      <div id="page-settings" class="page">
+        <div class="form-card">
+          <div class="card-header"><h3>⚙️ 基本设置</h3></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label>网站名称</label>
+              <input type="text" class="form-input" id="settingSiteName">
+            </div>
+            <div class="form-group">
+              <label>联系邮箱</label>
+              <input type="email" class="form-input" id="settingContactEmail">
+            </div>
+            <div class="form-group">
+              <label>ICP备案号</label>
+              <input type="text" class="form-input" id="settingIcpNumber" placeholder="如：京ICP备XXXXXXXX号">
+            </div>
+            <div class="form-group">
+              <label>维护提示语</label>
+              <textarea class="form-textarea" id="settingMaintenanceMsg" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="form-card">
+          <div class="card-header"><h3>🔧 功能开关</h3></div>
+          <div class="card-body">
+            <div class="switch-group">
+              <div class="switch-item">
+                <div><div class="switch-title">用户注册</div><div class="switch-desc">允许新用户注册账号</div></div>
+                <label class="switch"><input type="checkbox" id="settingRegistration"><span class="slider"></span></label>
+              </div>
+              <div class="switch-item">
+                <div><div class="switch-title">AI生成</div><div class="switch-desc">允许用户使用AI生成功能</div></div>
+                <label class="switch"><input type="checkbox" id="settingAiGeneration"><span class="slider"></span></label>
+              </div>
+              <div class="switch-item">
+                <div><div class="switch-title">支付功能</div><div class="switch-desc">允许用户进行支付升级</div></div>
+                <label class="switch"><input type="checkbox" id="settingPayment"><span class="slider"></span></label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-card">
+          <div class="card-header"><h3>🚦 网站状态</h3></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label>网站运行状态</label>
+              <select class="form-input" id="settingSiteStatus">
+                <option value="online">🟢 正常运行</option>
+                <option value="maintenance">🟡 维护中</option>
+                <option value="offline">🔴 暂停服务</option>
+              </select>
+            </div>
+            <button class="btn-submit" onclick="saveSettings()">💾 保存设置</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 操作日志 -->
+      <div id="page-logs" class="page">
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr><th>时间</th><th>管理员</th><th>操作</th><th>详情</th><th>IP地址</th></tr>
+            </thead>
+            <tbody id="logTableBody">
+              <tr><td colspan="5" class="table-loading">加载中...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="logPagination"></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Toast提示 -->
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- 用户详情弹窗 -->
+<div class="modal-overlay" id="userDetailModal">
+  <div class="modal modal-large">
+    <div class="modal-header">
+      <h3>👤 用户详情</h3>
+      <span class="modal-close" onclick="closeModal('userDetailModal')">✕</span>
+    </div>
+    <div class="modal-body" id="userDetailContent"></div>
+  </div>
+</div>
+
+<!-- 回复反馈弹窗 -->
+<div class="modal-overlay" id="replyModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>💬 回复反馈</h3>
+      <span class="modal-close" onclick="closeModal('replyModal')">✕</span>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>回复内容 *</label>
+        <textarea class="form-textarea" id="replyContent" rows="4" placeholder="请输入回复内容"></textarea>
+      </div>
+      <button class="btn-submit" onclick="submitReply()">✉️ 提交回复</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/admin/js/app.js"></script>
+</body>
+</html>

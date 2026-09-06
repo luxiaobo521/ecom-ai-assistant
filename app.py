@@ -1570,6 +1570,10 @@ def admin_mask_phone(phone):
 
 @app.route('/admin')
 def admin_page():
+    admin_html_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'admin.html')
+    if os.path.exists(admin_html_path):
+        with open(admin_html_path, 'r', encoding='utf-8') as f:
+            return f.read()
     return render_template('admin.html')
 
 @app.route('/api/admin/health')

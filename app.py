@@ -40,6 +40,11 @@ API_KEY = os.environ.get('DOUBAO_API_KEY', '')
 MODEL_ID = os.environ.get('DOUBAO_MODEL_ID', 'doubao-pro-32k')
 API_BASE = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions'
 
+# QQ登录配置（去 https://connect.qq.com/ 注册网站应用获取）
+QQ_APP_ID = os.environ.get('QQ_APP_ID', '')
+QQ_APP_KEY = os.environ.get('QQ_APP_KEY', '')
+QQ_REDIRECT_URI = os.environ.get('QQ_REDIRECT_URI', 'https://ecom-ai-assistant-9dkf.onrender.com/auth/qq/callback')
+
 USERS_FILE = os.path.join(os.path.dirname(__file__), 'users.json')
 ORDERS_FILE = os.path.join(os.path.dirname(__file__), 'orders.json')
 FEEDBACKS_FILE = os.path.join(os.path.dirname(__file__), 'feedbacks.json')
@@ -533,6 +538,248 @@ def logout():
             save_users(users)
     session.clear()
     return jsonify({'success': True, 'message': '已退出登录'})
+
+# ==================== 邮箱登录 ====================
+@app.route('/api/register-email', methods=['POST'])
+def register_email():
+    """邮箱注册"""
+    data = request.get_json() or {}
+    email = sanitize_input(data.get('email', ''), 100).lower()
+    password = data.get('password', '')
+    nickname = sanitize_input(data.get('nickname', ''), 50)
+
+    if not email or not password:
+        return jsonify({'success': False, 'message': '请填写邮箱和密码'}), 400
+    if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+        return jsonify({'success': False, 'message': '邮箱格式不正确'}), 400
+    if len(password) < 8:
+        return jsonify({'success': False, 'message': '密码至少8位'}), 400
+
+    users = load_users()
+    # 检查邮箱是否已注册
+    for u in users.values():
+        if u.get('email', '').lower() == email:
+            return jsonify({'success': False, 'message': '该邮箱已被注册'}), 400
+
+    # 创建用户（用邮箱作为username）
+    user_id = str(uuid.uuid4())
+    now = time.time()
+    user = {
+        'id': user_id,
+        'username': email,
+        'email': email,
+        'phone': '',
+        'nickname': nickname or f'电商用户{email[:4]}',
+        'password': hash_password(password),
+        'plan': 'free',
+        'member_expire': 0,
+        'created_at': now,
+        'last_login': now,
+        'last_login_ip': request.remote_addr or '',
+        'city': '',
+        'avatar': '',
+        'bound_shops': [],
+        'daily_ai_usage': 0,
+        'daily_competitor_usage': 0,
+        'last_reset_date': time.strftime('%Y-%m-%d'),
+        'notifications': [
+            {'id': str(uuid.uuid4()), 'type': 'system', 'icon': '🔔',
+             'title': '欢迎使用电商AI运营助手',
+             'content': '注册即送10次AI生成次数，开始体验智能运营吧！',
+             'time': now, 'read': False}
+        ],
+        'devices': [],
+        'login_history': [],
+        'ai_history': [],
+        'invite_code': 'INV' + str(uuid.uuid4())[:8].upper(),
+        'invited_by': '',
+        'coupons': [],
+        'security_settings': {'login_alert': True, 'two_factor': False}
+    }
+    users[email] = user
+    save_users(users)
+
+    session['username'] = email
+    session['user_id'] = user_id
+    session.permanent = True
+
+    return jsonify({
+        'success': True, 'message': '注册成功', 'username': email,
+        'nickname': user['nickname'], 'plan': 'free'
+    })
+
+@app.route('/api/login-email', methods=['POST'])
+def login_email():
+    """邮箱登录"""
+    ip = request.remote_addr or 'unknown'
+    allowed, remaining = check_login_attempts(ip)
+    if not allowed:
+        return jsonify({'success': False, 'message': '登录失败次数过多，请15分钟后再试'}), 429
+
+    data = request.get_json() or {}
+    email = sanitize_input(data.get('email', ''), 100).lower()
+    password = data.get('password', '')
+
+    if not email or not password:
+        return jsonify({'success': False, 'message': '请填写邮箱和密码'}), 400
+
+    users = load_users()
+    # 查找邮箱对应的用户
+    user = None
+    for u in users.values():
+        if u.get('email', '').lower() == email:
+            user = u
+            break
+
+    if not user or not verify_password(password, user.get('password', '')):
+        record_login_failure(ip)
+        return jsonify({'success': False, 'message': '邮箱或密码错误'}), 401
+
+    reset_login_attempts(ip)
+    session['username'] = user['username']
+    session['user_id'] = user.get('id', '')
+    session.permanent = True
+
+    now = time.time()
+    user['last_login'] = now
+    user['last_login_ip'] = ip
+
+    users[user['username']] = user
+    save_users(users)
+
+    return jsonify({
+        'success': True, 'message': '登录成功', 'username': user['username'],
+        'nickname': user.get('nickname', '用户'), 'plan': user.get('plan', 'free')
+    })
+
+# ==================== QQ登录 ====================
+@app.route('/auth/qq/url')
+def qq_login_url():
+    """获取QQ登录URL"""
+    if not QQ_APP_ID:
+        return jsonify({'success': False, 'message': 'QQ登录未配置，请先配置QQ_APP_ID'}), 400
+    state = str(uuid.uuid4())
+    session['qq_state'] = state
+    auth_url = (
+        f'https://graph.qq.com/oauth2.0/authorize'
+        f'?response_type=code&client_id={QQ_APP_ID}'
+        f'&redirect_uri={QQ_REDIRECT_URI}&state={state}'
+    )
+    return jsonify({'success': True, 'url': auth_url})
+
+@app.route('/auth/qq/callback')
+def qq_login_callback():
+    """QQ登录回调"""
+    code = request.args.get('code', '')
+    state = request.args.get('state', '')
+
+    if not code:
+        return '登录失败：缺少授权码', 400
+
+    try:
+        import urllib.request
+        import urllib.parse
+
+        # 1. 用code换取access_token
+        token_url = (
+            f'https://graph.qq.com/oauth2.0/token'
+            f'?grant_type=authorization_code&client_id={QQ_APP_ID}'
+            f'&client_secret={QQ_APP_KEY}&code={code}'
+            f'&redirect_uri={QQ_REDIRECT_URI}'
+        )
+        token_resp = urllib.request.urlopen(token_url, timeout=10).read().decode('utf-8')
+        # 解析 access_token=xxx&expires_in=xxx&refresh_token=xxx
+        token_params = urllib.parse.parse_qs(token_resp)
+        access_token = token_params.get('access_token', [''])[0]
+
+        if not access_token:
+            return '登录失败：获取access_token失败', 400
+
+        # 2. 获取用户openid
+        openid_url = f'https://graph.qq.com/oauth2.0/me?access_token={access_token}'
+        openid_resp = urllib.request.urlopen(openid_url, timeout=10).read().decode('utf-8')
+        # 解析 callback( {"client_id":"xxx","openid":"xxx"} );
+        import json as json_mod
+        start = openid_resp.find('{')
+        end = openid_resp.rfind('}') + 1
+        openid_data = json_mod.loads(openid_resp[start:end])
+        openid = openid_data.get('openid', '')
+
+        if not openid:
+            return '登录失败：获取用户信息失败', 400
+
+        # 3. 获取用户昵称和头像
+        user_info_url = (
+            f'https://graph.qq.com/user/get_user_info'
+            f'?access_token={access_token}&oauth_consumer_key={QQ_APP_ID}&openid={openid}'
+        )
+        user_info_resp = urllib.request.urlopen(user_info_url, timeout=10).read().decode('utf-8')
+        user_info = json_mod.loads(user_info_resp)
+        nickname = user_info.get('nickname', f'QQ用户{openid[:6]}')
+        avatar = user_info.get('figureurl_qq_2', '') or user_info.get('figureurl_qq_1', '')
+
+        # 4. 查找或创建用户
+        users = load_users()
+        qq_username = f'qq_{openid}'
+        user = users.get(qq_username)
+
+        if not user:
+            # 创建新用户
+            user_id = str(uuid.uuid4())
+            now = time.time()
+            user = {
+                'id': user_id,
+                'username': qq_username,
+                'email': '',
+                'phone': '',
+                'nickname': nickname,
+                'password': '',
+                'qq_openid': openid,
+                'plan': 'free',
+                'member_expire': 0,
+                'created_at': now,
+                'last_login': now,
+                'last_login_ip': request.remote_addr or '',
+                'city': '',
+                'avatar': avatar,
+                'bound_shops': [],
+                'daily_ai_usage': 0,
+                'daily_competitor_usage': 0,
+                'last_reset_date': time.strftime('%Y-%m-%d'),
+                'notifications': [
+                    {'id': str(uuid.uuid4()), 'type': 'system', 'icon': '🔔',
+                     'title': '欢迎使用电商AI运营助手',
+                     'content': '注册即送10次AI生成次数，开始体验智能运营吧！',
+                     'time': now, 'read': False}
+                ],
+                'devices': [],
+                'login_history': [],
+                'ai_history': [],
+                'invite_code': 'INV' + str(uuid.uuid4())[:8].upper(),
+                'invited_by': '',
+                'coupons': [],
+                'security_settings': {'login_alert': True, 'two_factor': False}
+            }
+            users[qq_username] = user
+            save_users(users)
+
+        # 登录
+        session['username'] = qq_username
+        session['user_id'] = user.get('id', '')
+        session.permanent = True
+
+        # 重定向到首页
+        return '''
+        <script>
+            window.opener && window.opener.postMessage({type: 'qq_login_success'}, '*');
+            window.close();
+            setTimeout(function(){ window.location.href = '/'; }, 500);
+        </script>
+        <p>登录成功，正在跳转...</p>
+        '''
+
+    except Exception as e:
+        return f'登录失败：{str(e)}', 500
 
 @app.route('/api/user-info')
 def user_info():

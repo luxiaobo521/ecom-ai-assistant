@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -889,7 +889,8 @@
 
       <!-- 升级卡片 -->
       <div class="sidebar-upgrade">
-        <div class="sidebar-upgrade-card">
+        <div class="sidebar-upgrade-card" id="sidebarUpgradeCard">
+          <span class="sidebar-upgrade-close" onclick="closeUpgradeCard()" title="关闭">×</span>
           <div class="sidebar-upgrade-title">🚀 升级旗舰版</div>
           <div class="sidebar-upgrade-desc">解锁全部高级功能，不限次数使用</div>
           <div class="sidebar-upgrade-btn" onclick="switchAdminPage('membership', document.querySelectorAll('.sidebar-nav-item')[10])">立即升级</div>
@@ -1623,7 +1624,6 @@
               </div>
             </div>
           </div>
-        </div>
 
         <!-- ===== 会员升级 ===== -->
         <div id="admin-membership" class="admin-page">
@@ -3035,6 +3035,7 @@
           </div>
         </div>
 
+        </div><!-- /.page-content -->
       </div>
     </div>
   </div>
@@ -3642,3 +3643,6 @@
 <script src="/static/js/app.js"></script>
 </body>
 </html>
+
+
+

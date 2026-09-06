@@ -2588,3 +2588,142 @@ document.addEventListener('DOMContentLoaded', function() {
   } catch(e) {}
 });
 
+
+
+// ==================== 邮箱登录/注册 ====================
+function switchLoginType(type) {
+  var tabPhone = document.getElementById('tabPhone');
+  var tabEmail = document.getElementById('tabEmail');
+  var formPhone = document.getElementById('loginForm');
+  var formEmail = document.getElementById('loginEmailForm');
+  if (type === 'phone') {
+    tabPhone.classList.add('active');
+    tabEmail.classList.remove('active');
+    formPhone.style.display = 'block';
+    formEmail.style.display = 'none';
+  } else {
+    tabPhone.classList.remove('active');
+    tabEmail.classList.add('active');
+    formPhone.style.display = 'none';
+    formEmail.style.display = 'block';
+  }
+}
+
+function switchRegisterType(type) {
+  var tabPhone = document.getElementById('regTabPhone');
+  var tabEmail = document.getElementById('regTabEmail');
+  var formPhone = document.getElementById('registerForm');
+  var formEmail = document.getElementById('registerEmailForm');
+  if (type === 'phone') {
+    tabPhone.classList.add('active');
+    tabEmail.classList.remove('active');
+    formPhone.style.display = 'block';
+    formEmail.style.display = 'none';
+  } else {
+    tabPhone.classList.remove('active');
+    tabEmail.classList.add('active');
+    formPhone.style.display = 'none';
+    formEmail.style.display = 'block';
+  }
+}
+
+function handleEmailLogin(event) {
+  event.preventDefault();
+  var email = document.getElementById('loginEmail').value.trim();
+  var password = document.getElementById('loginEmailPassword').value;
+  var btn = document.getElementById('loginEmailBtn');
+  if (!email || !password) {
+    showToast('error', '请填写邮箱和密码');
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = '登录中...';
+  fetch('/api/login-email', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({email: email, password: password})
+  }).then(r => r.json()).then(data => {
+    if (data.success) {
+      showToast('success', '登录成功');
+      setTimeout(function() { location.reload(); }, 800);
+    } else {
+      showToast('error', data.message || '登录失败');
+      btn.disabled = false;
+      btn.textContent = '登 录';
+    }
+  }).catch(() => {
+    showToast('error', '网络错误，请稍后重试');
+    btn.disabled = false;
+    btn.textContent = '登 录';
+  });
+}
+
+function handleEmailRegister(event) {
+  event.preventDefault();
+  var email = document.getElementById('regEmail').value.trim();
+  var nickname = document.getElementById('regEmailNickname').value.trim();
+  var password = document.getElementById('regEmailPassword').value;
+  var password2 = document.getElementById('regEmailPassword2').value;
+  var btn = document.getElementById('registerEmailBtn');
+  if (!email || !password) {
+    showToast('error', '请填写邮箱和密码');
+    return;
+  }
+  if (password !== password2) {
+    showToast('error', '两次输入的密码不一致');
+    return;
+  }
+  if (password.length < 8) {
+    showToast('error', '密码至少8位');
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = '注册中...';
+  fetch('/api/register-email', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({email: email, password: password, nickname: nickname})
+  }).then(r => r.json()).then(data => {
+    if (data.success) {
+      showToast('success', '注册成功，正在登录...');
+      setTimeout(function() { location.reload(); }, 1000);
+    } else {
+      showToast('error', data.message || '注册失败');
+      btn.disabled = false;
+      btn.textContent = '注 册';
+    }
+  }).catch(() => {
+    showToast('error', '网络错误，请稍后重试');
+    btn.disabled = false;
+    btn.textContent = '注 册';
+  });
+}
+
+// ==================== QQ登录 ====================
+function handleQQLogin() {
+  fetch('/auth/qq/url')
+    .then(r => r.json())
+    .then(data => {
+      if (data.success && data.url) {
+        // 打开新窗口进行QQ授权
+        var width = 600, height = 500;
+        var left = (screen.width - width) / 2;
+        var top = (screen.height - height) / 2;
+        window.open(data.url, 'QQ登录', 'width=' + width + ',height=' + height + ',left=' + left + ',top=' + top);
+        // 监听登录成功消息
+        window.addEventListener('message', function qqCallback(e) {
+          if (e.data && e.data.type === 'qq_login_success') {
+            window.removeEventListener('message', qqCallback);
+            showToast('success', 'QQ登录成功');
+            setTimeout(function() { location.reload(); }, 800);
+          }
+        });
+      } else {
+        showToast('error', data.message || 'QQ登录暂未配置');
+      }
+    })
+    .catch(() => {
+      showToast('error', '网络错误，请稍后重试');
+    });
+}
+

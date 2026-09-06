@@ -585,6 +585,13 @@
       <h2 class="auth-title">登录账号</h2>
       <p class="auth-subtitle">欢迎回来，请输入你的账号信息</p>
 
+      <!-- 登录方式切换 -->
+      <div class="auth-tabs">
+        <div class="auth-tab active" onclick="switchLoginType('phone')" id="tabPhone">手机号登录</div>
+        <div class="auth-tab" onclick="switchLoginType('email')" id="tabEmail">邮箱登录</div>
+      </div>
+
+      <!-- 手机号登录表单 -->
       <form id="loginForm" onsubmit="handleLogin(event)">
         <div class="form-group">
           <label class="form-label">手机号</label>
@@ -615,6 +622,37 @@
         <button type="submit" class="btn btn-primary btn-lg btn-block" id="loginBtn">登 录</button>
       </form>
 
+      <!-- 邮箱登录表单 -->
+      <form id="loginEmailForm" onsubmit="handleEmailLogin(event)" style="display:none;">
+        <div class="form-group">
+          <label class="form-label">邮箱</label>
+          <div class="input-group">
+            <span class="input-icon">📧</span>
+            <input type="email" class="form-input" id="loginEmail" placeholder="请输入邮箱" required autocomplete="email">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <div class="input-group">
+            <span class="input-icon">🔒</span>
+            <input type="password" class="form-input" id="loginEmailPassword" placeholder="请输入密码" required autocomplete="current-password">
+            <span class="input-suffix">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="togglePassword('loginEmailPassword')" style="height:28px;padding:0 8px;">👁</button>
+            </span>
+          </div>
+        </div>
+
+        <div class="auth-options">
+          <label class="checkbox-label">
+            <input type="checkbox" id="rememberMeEmail" checked> 记住我
+          </label>
+          <span class="auth-forgot" onclick="showToast('info','请联系客服重置密码')">忘记密码？</span>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg btn-block" id="loginEmailBtn">登 录</button>
+      </form>
+
       <div class="auth-divider">
         <div class="auth-divider-line"></div>
         <span class="auth-divider-text">其他登录方式</span>
@@ -622,9 +660,9 @@
       </div>
 
       <div class="auth-social">
+        <div class="auth-social-btn" onclick="handleQQLogin()" title="QQ登录" style="background:#12B7F5;color:#fff;">🐧</div>
         <div class="auth-social-btn" onclick="showToast('info','微信登录即将上线')">💬</div>
         <div class="auth-social-btn" onclick="showToast('info','支付宝登录即将上线')">💰</div>
-        <div class="auth-social-btn" onclick="showToast('info','抖音登录即将上线')">🎵</div>
       </div>
 
       <p class="auth-switch">还没有账号？ <a onclick="showPage('register')">立即注册</a></p>
@@ -675,6 +713,13 @@
       <h2 class="auth-title">注册账号</h2>
       <p class="auth-subtitle">创建账号，开启AI电商运营之旅</p>
 
+      <!-- 注册方式切换 -->
+      <div class="auth-tabs">
+        <div class="auth-tab active" onclick="switchRegisterType('phone')" id="regTabPhone">手机号注册</div>
+        <div class="auth-tab" onclick="switchRegisterType('email')" id="regTabEmail">邮箱注册</div>
+      </div>
+
+      <!-- 手机号注册表单 -->
       <form id="registerForm" onsubmit="handleRegister(event)">
         <div class="form-group">
           <label class="form-label">手机号</label>
@@ -732,6 +777,52 @@
         <button type="submit" class="btn btn-primary btn-lg btn-block" id="registerBtn">注 册</button>
       </form>
 
+      <!-- 邮箱注册表单 -->
+      <form id="registerEmailForm" onsubmit="handleEmailRegister(event)" style="display:none;">
+        <div class="form-group">
+          <label class="form-label">邮箱</label>
+          <div class="input-group">
+            <span class="input-icon">📧</span>
+            <input type="email" class="form-input" id="regEmail" placeholder="请输入邮箱" required autocomplete="email">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">昵称（选填）</label>
+          <div class="input-group">
+            <span class="input-icon">👤</span>
+            <input type="text" class="form-input" id="regEmailNickname" placeholder="给自己起个昵称" maxlength="20" autocomplete="nickname">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">设置密码</label>
+          <div class="input-group">
+            <span class="input-icon">🔒</span>
+            <input type="password" class="form-input" id="regEmailPassword" placeholder="至少8位" required oninput="checkPasswordStrength(this.value)" autocomplete="new-password">
+            <span class="input-suffix">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="togglePassword('regEmailPassword')" style="height:28px;padding:0 8px;">👁</button>
+            </span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">确认密码</label>
+          <div class="input-group">
+            <span class="input-icon">🔒</span>
+            <input type="password" class="form-input" id="regEmailPassword2" placeholder="请再次输入密码" required autocomplete="new-password">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="agreeEmailTerms" required> 我已阅读并同意 <a onclick="showToast('info','服务条款即将上线')" style="color:var(--primary-600);">《服务条款》</a> 和 <a onclick="showToast('info','隐私政策即将上线')" style="color:var(--primary-600);">《隐私政策》</a>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg btn-block" id="registerEmailBtn">注 册</button>
+      </form>
+
       <div class="auth-divider">
         <div class="auth-divider-line"></div>
         <span class="auth-divider-text">其他注册方式</span>
@@ -739,9 +830,9 @@
       </div>
 
       <div class="auth-social">
+        <div class="auth-social-btn" onclick="handleQQLogin()" title="QQ注册" style="background:#12B7F5;color:#fff;">🐧</div>
         <div class="auth-social-btn" onclick="showToast('info','微信注册即将上线')">💬</div>
         <div class="auth-social-btn" onclick="showToast('info','支付宝注册即将上线')">💰</div>
-        <div class="auth-social-btn" onclick="showToast('info','抖音注册即将上线')">🎵</div>
       </div>
 
       <p class="auth-switch">已有账号？ <a onclick="showPage('login')">立即登录</a></p>

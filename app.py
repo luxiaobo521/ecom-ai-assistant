@@ -36,12 +36,12 @@ login_attempts = {}
 api_rate_limit = {}
 
 # ==================== 配置 ====================
-API_KEY = os.environ.get('DOUBAO_API_KEY', '')
-MODEL_ID = os.environ.get('DOUBAO_MODEL_ID', 'doubao-pro-32k')
-API_BASE = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions'
+API_KEY = os.environ.get('ZHIPU_API_KEY', '')
+MODEL_ID = os.environ.get('ZHIPU_MODEL_ID', 'glm-4-flash')
+API_BASE = 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
 
 def call_doubao_api(prompt, system_prompt='', max_tokens=2000, temperature=0.7):
-    """调用豆包API生成内容"""
+    """调用智谱AI API生成内容（GLM-4-Flash完全免费）"""
     if not API_KEY:
         return None, 'API Key未配置'
     try:

@@ -40,6 +40,39 @@ API_KEY = os.environ.get('DOUBAO_API_KEY', '')
 MODEL_ID = os.environ.get('DOUBAO_MODEL_ID', 'doubao-pro-32k')
 API_BASE = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions'
 
+def call_doubao_api(prompt, system_prompt='', max_tokens=2000, temperature=0.7):
+    """调用豆包API生成内容"""
+    if not API_KEY:
+        return None, 'API Key未配置'
+    try:
+        import urllib.request
+        import json as json_mod
+        messages = []
+        if system_prompt:
+            messages.append({'role': 'system', 'content': system_prompt})
+        messages.append({'role': 'user', 'content': prompt})
+        payload = json_mod.dumps({
+            'model': MODEL_ID,
+            'messages': messages,
+            'max_tokens': max_tokens,
+            'temperature': temperature
+        }).encode('utf-8')
+        req = urllib.request.Request(
+            API_BASE,
+            data=payload,
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {API_KEY}'
+            },
+            method='POST'
+        )
+        with urllib.request.urlopen(req, timeout=60) as response:
+            result = json_mod.loads(response.read().decode('utf-8'))
+            content = result['choices'][0]['message']['content']
+            return content, None
+    except Exception as e:
+        return None, str(e)
+
 # QQ登录配置（去 https://connect.qq.com/ 注册网站应用获取）
 QQ_APP_ID = os.environ.get('QQ_APP_ID', '')
 QQ_APP_KEY = os.environ.get('QQ_APP_KEY', '')
@@ -949,7 +982,26 @@ def generate_title():
     if not product_name:
         return jsonify({'success': False, 'message': '请输入商品名称'}), 400
 
-    demo_result = f"""1. 【爆款】2026新款{sanitize_output(product_name)} {sanitize_output(features)} 百搭潮流款
+    # 调用真实AI API
+    if API_KEY:
+        system_prompt = '你是一位资深电商运营专家，擅长撰写高点击率的商品标题。请根据商品信息生成多个优质标题，直接输出标题列表，不要解释。'
+        prompt = f'''请为以下商品生成{count}个{platform}平台{style}风格的商品标题：
+
+商品名称：{product_name}
+核心卖点：{features}
+
+要求：
+1. 每个标题控制在30字以内
+2. 包含核心关键词，利于搜索优化
+3. 有吸引力，能提高点击率
+4. 直接输出编号列表，不要其他解释'''
+        ai_result, error = call_doubao_api(prompt, system_prompt, max_tokens=1500, temperature=0.8)
+        if ai_result:
+            demo_result = ai_result
+        else:
+            demo_result = f'AI生成失败：{error}，请稍后重试'
+    else:
+        demo_result = f"""1. 【爆款】2026新款{sanitize_output(product_name)} {sanitize_output(features)} 百搭潮流款
 2. {sanitize_output(platform)}热销 {sanitize_output(product_name)} {sanitize_output(style)}风格 高点击率
 3. 【商场同款】{sanitize_output(product_name)} {sanitize_output(features)} 品质保证
 4. 2026新品 {sanitize_output(product_name)} 网红推荐 限时特惠
@@ -982,7 +1034,26 @@ def generate_detail():
     if not product_name or not features:
         return jsonify({'success': False, 'message': '请填写商品名称和核心卖点'}), 400
 
-    demo_result = f"""【首屏Slogan】
+    # 调用真实AI API
+    if API_KEY:
+        system_prompt = '你是一位资深电商文案策划专家，擅长撰写高转化率的商品详情页文案。请根据商品信息生成完整的详情页文案，直接输出内容，不要解释。'
+        prompt = f'''请为以下商品生成{style}风格的商品详情页文案：
+
+商品名称：{product_name}
+核心卖点：{features}
+产品参数：{params if params else '请根据商品类型合理补充'}
+
+要求：
+1. 包含首屏Slogan、核心卖点、产品参数、使用场景、售后保障等模块
+2. 文案有感染力，能提高转化率
+3. 直接输出完整文案，不要其他解释'''
+        ai_result, error = call_doubao_api(prompt, system_prompt, max_tokens=2500, temperature=0.7)
+        if ai_result:
+            demo_result = ai_result
+        else:
+            demo_result = f'AI生成失败：{error}，请稍后重试'
+    else:
+        demo_result = f"""【首屏Slogan】
 {sanitize_output(product_name)} - {sanitize_output(style)}之选，重新定义品质生活
 
 【核心卖点】
@@ -1026,7 +1097,24 @@ def generate_service():
     if not question:
         return jsonify({'success': False, 'message': '请输入具体问题场景'}), 400
 
-    demo_result = f"""话术1（耐心解答型）：
+    # 调用真实AI API
+    if API_KEY:
+        system_prompt = '你是一位资深电商客服培训专家，擅长撰写各种场景的客服话术。请根据用户问题生成多个不同风格的回复话术，直接输出话术列表，不要解释。'
+        prompt = f'''请为以下{scenario}场景生成5个{style}风格的客服回复话术：
+
+用户问题：{question}
+
+要求：
+1. 每个话术有不同的侧重点（耐心解答、专业自信、亲切互动、高效简洁、高情商挽留）
+2. 话术要自然、真诚，能提高用户满意度
+3. 直接输出编号列表，不要其他解释'''
+        ai_result, error = call_doubao_api(prompt, system_prompt, max_tokens=2000, temperature=0.8)
+        if ai_result:
+            demo_result = ai_result
+        else:
+            demo_result = f'AI生成失败：{error}，请稍后重试'
+    else:
+        demo_result = f"""话术1（耐心解答型）：
 亲，您好呀~关于您问的「{sanitize_output(question)}」这个问题，我来为您详细解答一下。我们的产品都是经过严格质检的，品质方面您完全可以放心呢~
 
 话术2（专业自信型）：

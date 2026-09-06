@@ -2,9 +2,9 @@
 let currentPage = 'landing';
 let currentAdminPage = 'overview';
 let userInfo = null;
+let isYearlyPricing = false;
 
 // ==================== 安全工具函数 ====================
-// HTML转义，防止XSS
 function escapeHtml(text) {
     if (text === null || text === undefined) return '';
     const div = document.createElement('div');
@@ -12,19 +12,18 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// 安全设置元素文本内容
-function setText(elementId, text) {
-    const el = document.getElementById(elementId);
-    if (el) el.textContent = text;
-}
-
-// ==================== 前台页面切换 ====================
+// ==================== 页面切换 ====================
 function showPage(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const target = document.getElementById('page-' + page);
     if (target) target.classList.add('active');
     currentPage = page;
     window.scrollTo(0, 0);
+    
+    // 导航栏滚动效果
+    if (page === 'landing' || page === 'pricing' || page === 'help') {
+        initNavScroll();
+    }
     
     // 如果是后台页面，加载用户信息
     if (page === 'dashboard') {
@@ -41,160 +40,231 @@ function scrollToFeatures() {
     }, 100);
 }
 
-function goToFunction(func) {
-    // 检查登录状态
-    fetch('/api/user-info').then(r => r.json()).then(data => {
-        if (data.logged_in) {
-            showPage('dashboard');
-            setTimeout(() => switchAdminPage(func), 100);
+// 导航栏滚动效果
+function initNavScroll() {
+    const nav = document.getElementById('landing-nav');
+    if (!nav) return;
+    
+    const handleScroll = () => {
+        if (window.scrollY > 50) {
+            nav.classList.add('scrolled');
         } else {
-            showPage('login');
-            showToast('请先登录后使用', 'warning');
+            nav.classList.remove('scrolled');
         }
-    });
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
 }
 
-// ==================== 登录/注册Tab切换 ====================
-function switchAuthTab(tab) {
-    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-    if (tab === 'login') {
-        document.getElementById('tab-login').classList.add('active');
-        document.getElementById('login-form').classList.add('active');
-    } else {
-        document.getElementById('tab-register').classList.add('active');
-        document.getElementById('register-form').classList.add('active');
+// 价格切换
+function togglePricing() {
+    isYearlyPricing = !isYearlyPricing;
+    const switches = document.querySelectorAll('.pricing-toggle-switch');
+    const labels = document.querySelectorAll('.pricing-toggle-label');
+    
+    switches.forEach(s => s.classList.toggle('active', isYearlyPricing));
+    labels.forEach((l, i) => {
+        l.classList.toggle('active', (i === 0 && !isYearlyPricing) || (i === 1 && isYearlyPricing));
+    });
+    
+    // 更新价格显示
+    const monthlyPrice = document.getElementById('monthly-price');
+    const yearlyPrice = document.getElementById('yearly-price');
+    if (monthlyPrice) monthlyPrice.textContent = isYearlyPricing ? '33' : '39';
+}
+
+// ==================== 功能跳转 ====================
+function goToFunction(func) {
+    if (!userInfo) {
+        showToast('请先登录', 'warning');
+        showPage('login');
+        return;
     }
+    showPage('dashboard');
+    setTimeout(() => switchAdminPage(func), 100);
 }
 
 // ==================== 后台页面切换 ====================
 function switchAdminPage(page) {
-    document.querySelectorAll('.admin-content').forEach(c => c.classList.remove('active'));
-    const target = document.getElementById('admin-' + page);
-    if (target) target.classList.add('active');
+    // 隐藏所有后台页面
+    document.querySelectorAll('.admin-page').forEach(p => p.style.display = 'none');
     
-    document.querySelectorAll('.menu-item').forEach(item => {
-        item.classList.remove('active');
-        if (item.dataset.page === page) item.classList.add('active');
-    });
+    // 显示目标页面
+    const target = document.getElementById('admin-' + page);
+    if (target) target.style.display = 'block';
     
     currentAdminPage = page;
     
+    // 更新侧边栏激活状态
+    document.querySelectorAll('.sidebar-nav-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.page === page) {
+            item.classList.add('active');
+        }
+    });
+    
+    // 更新面包屑
+    const pageNames = {
+        'overview': '数据总看板',
+        'title': '标题生成',
+        'detail': '详情页生成',
+        'service': '客服话术',
+        'competitor': '竞品分析',
+        'shop-data': '店铺数据监控',
+        'diagnosis': 'AI运营诊断',
+        'report': '报表生成',
+        'shop-bind': '店铺绑定',
+        'pricing-admin': '会员升级',
+        'profile': '个人中心'
+    };
+    const breadcrumb = document.getElementById('breadcrumb-current');
+    if (breadcrumb) breadcrumb.textContent = pageNames[page] || page;
+    
     // 页面特定初始化
-    if (page === 'overview') loadOverviewData();
-    if (page === 'shop-data') loadShopData();
-    if (page === 'shop-bind') loadBoundShops();
+    if (page === 'shop-bind') {
+        loadBoundShops();
+    }
+    if (page === 'pricing-admin') {
+        loadPricingAdmin();
+    }
+    if (page === 'profile') {
+        loadProfile();
+    }
 }
 
 // ==================== 用户系统 ====================
-async function handleLogin(event) {
-    event.preventDefault();
-    const phone = document.getElementById('login-phone').value.trim();
-    const password = document.getElementById('login-password').value;
-    
-    if (!phone || !password) { showToast('请填写手机号和密码', 'warning'); return; }
-    
-    showLoading('登录中...');
-    try {
-        const res = await fetch('/api/login', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({phone, password})
-        });
-        const data = await res.json();
-        hideLoading();
-        if (data.success) {
-            showToast('登录成功！', 'success');
-            showPage('dashboard');
-        } else {
-            showToast(data.message || '登录失败', 'error');
-        }
-    } catch (e) { hideLoading(); showToast('网络错误', 'error'); }
-}
-
-async function handleRegister(event) {
-    event.preventDefault();
-    const form = event.target;
-    const phoneInput = form.querySelector('input[type="text"]');
-    const passwordInputs = form.querySelectorAll('input[type="password"]');
-    const phone = phoneInput ? phoneInput.value.trim() : '';
-    const password = passwordInputs[0] ? passwordInputs[0].value : '';
-    const confirm = passwordInputs[1] ? passwordInputs[1].value : '';
-    
-    if (!phone || !password) { showToast('请填写完整信息', 'warning'); return; }
-    if (phone.length !== 11) { showToast('请输入正确的手机号', 'warning'); return; }
-    if (password.length < 6) { showToast('密码至少6位', 'warning'); return; }
-    if (password !== confirm) { showToast('两次密码不一致', 'warning'); return; }
-    
-    showLoading('注册中...');
-    try {
-        const res = await fetch('/api/register', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({phone, password, confirm_password: confirm})
-        });
-        const data = await res.json();
-        hideLoading();
-        if (data.success) {
-            showToast('注册成功！', 'success');
-            showPage('dashboard');
-        } else {
-            showToast(data.message || '注册失败', 'error');
-        }
-    } catch (e) { hideLoading(); showToast('网络错误', 'error'); }
-}
-
-async function handleLogout() {
-    try {
-        await fetch('/logout');
-        showToast('已退出登录', 'success');
-        showPage('landing');
-    } catch (e) { showToast('退出失败', 'error'); }
-}
-
 async function loadUserInfo() {
     try {
         const res = await fetch('/api/user-info');
         const data = await res.json();
         if (data.logged_in) {
             userInfo = data;
-            // 更新顶部栏
-            document.getElementById('user-plan-badge').textContent = data.plan_name;
-            document.getElementById('remaining-count').textContent = Math.max(0, data.daily_ai_limit - data.daily_ai_usage);
-            document.getElementById('user-name-display').textContent = data.phone;
-            document.getElementById('ai-used').textContent = data.daily_ai_usage;
-            document.getElementById('ai-limit').textContent = data.daily_ai_limit >= 9999 ? '不限' : data.daily_ai_limit;
-            // 更新个人中心
-            document.getElementById('profile-username').textContent = data.phone;
-            document.getElementById('profile-phone').textContent = data.phone;
-            document.getElementById('profile-plan').textContent = data.plan_name;
-            document.getElementById('profile-avatar').textContent = data.phone.charAt(0);
+            updateUserUI();
         }
     } catch (e) { /* 静默处理 */ }
 }
 
-// ==================== 数据看板 ====================
-async function loadOverviewData() {
+function updateUserUI() {
+    if (!userInfo) return;
+    
+    const username = userInfo.username || '用户';
+    const firstChar = username.charAt(0).toUpperCase();
+    
+    // 侧边栏
+    const sidebarAvatar = document.getElementById('sidebar-avatar');
+    const sidebarUsername = document.getElementById('sidebar-username');
+    const sidebarPlan = document.getElementById('sidebar-plan');
+    if (sidebarAvatar) sidebarAvatar.textContent = firstChar;
+    if (sidebarUsername) sidebarUsername.textContent = username;
+    if (sidebarPlan) {
+        const planNames = {free: '免费版', monthly: '月付版', yearly: '年付版', enterprise: '企业版'};
+        sidebarPlan.textContent = planNames[userInfo.plan] || '免费版';
+    }
+    
+    // 顶栏
+    const topbarAvatar = document.getElementById('topbar-avatar');
+    const topbarUsername = document.getElementById('topbar-username');
+    if (topbarAvatar) topbarAvatar.textContent = firstChar;
+    if (topbarUsername) topbarUsername.textContent = username;
+    
+    // 统计
+    const statAiUsage = document.getElementById('stat-ai-usage');
+    if (statAiUsage) {
+        statAiUsage.textContent = `${userInfo.daily_ai_usage || 0}/${userInfo.daily_ai_limit || 10}`;
+    }
+}
+
+async function handleLogin(event) {
+    event.preventDefault();
+    const phone = document.getElementById('login-phone').value.trim();
+    const password = document.getElementById('login-password').value;
+    
+    if (!phone || !password) {
+        showToast('请填写手机号和密码', 'error');
+        return;
+    }
+    
+    showLoading('登录中...');
     try {
-        const res = await fetch('/api/shop-data');
-        const data = await res.json();
-        if (data.success && data.data) {
-            const ov = data.data.overview;
-            document.getElementById('today-orders').textContent = ov.today_orders;
-            document.getElementById('today-sales').textContent = '¥' + ov.today_sales.toLocaleString();
-            document.getElementById('today-visitors').textContent = ov.visitors.toLocaleString();
-            document.getElementById('order-change').textContent = (ov.order_change >= 0 ? '+' : '') + ov.order_change + '% 环比昨日';
-            document.getElementById('sales-change').textContent = (ov.sales_change >= 0 ? '+' : '') + ov.sales_change + '% 环比昨日';
-            document.getElementById('order-change').className = 'overview-card-change ' + (ov.order_change >= 0 ? 'up' : 'down');
-            document.getElementById('sales-change').className = 'overview-card-change ' + (ov.sales_change >= 0 ? 'up' : 'down');
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({phone, password})
+        });
+        const result = await res.json();
+        hideLoading();
+        
+        if (result.success) {
+            showToast('登录成功', 'success');
+            showPage('dashboard');
+        } else {
+            showToast(result.message || '登录失败', 'error');
         }
-    } catch (e) { /* 静默处理 */ }
+    } catch (e) {
+        hideLoading();
+        showToast('网络错误', 'error');
+    }
 }
 
-// ==================== AI功能通用调用 ====================
-async function callAIAPI(url, data, loadingText = 'AI正在生成中...') {
-    showLoading(loadingText);
+async function handleRegister(event) {
+    event.preventDefault();
+    const phone = document.getElementById('register-phone').value.trim();
+    const password = document.getElementById('register-password').value;
+    const confirm = document.getElementById('register-confirm').value;
+    const agree = document.getElementById('agree-terms').checked;
+    
+    if (!phone || !password || !confirm) {
+        showToast('请填写完整信息', 'error');
+        return;
+    }
+    if (!agree) {
+        showToast('请阅读并同意用户协议', 'error');
+        return;
+    }
+    if (password !== confirm) {
+        showToast('两次密码不一致', 'error');
+        return;
+    }
+    
+    showLoading('注册中...');
+    try {
+        const res = await fetch('/api/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({phone, password, confirm_password: confirm})
+        });
+        const result = await res.json();
+        hideLoading();
+        
+        if (result.success) {
+            showToast('注册成功', 'success');
+            showPage('dashboard');
+        } else {
+            showToast(result.message || '注册失败', 'error');
+        }
+    } catch (e) {
+        hideLoading();
+        showToast('网络错误', 'error');
+    }
+}
+
+async function handleLogout() {
+    try {
+        await fetch('/api/logout', {method: 'POST'});
+    } catch (e) { /* 静默处理 */ }
+    userInfo = null;
+    showToast('已退出登录', 'success');
+    showPage('landing');
+}
+
+// ==================== AI生成通用函数 ====================
+async function callAIAPI(url, data, loadingText) {
+    showLoading(loadingText || 'AI生成中...');
     try {
         const res = await fetch(url, {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(data)
         });
         const result = await res.json();
@@ -202,111 +272,205 @@ async function callAIAPI(url, data, loadingText = 'AI正在生成中...') {
         return result;
     } catch (e) {
         hideLoading();
-        showToast('网络错误，请稍后重试', 'error');
+        showToast('网络错误', 'error');
         return null;
     }
 }
 
-function handleAPIResult(result, resultId, successMsg = '生成成功！') {
-    if (!result) return false;
-    if (!result.success) {
-        if (result.need_login) { showPage('login'); showToast('请先登录', 'warning'); }
-        else if (result.need_upgrade) { showUpgradeModal(result.message); }
-        else showToast(result.message || '生成失败', 'error');
-        return false;
+function renderAIResult(containerId, result) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (!result || !Array.isArray(result)) {
+        // 单条结果
+        const item = document.createElement('div');
+        item.className = 'ai-result-item';
+        const num = document.createElement('div');
+        num.className = 'ai-result-num';
+        num.textContent = '1';
+        const text = document.createElement('div');
+        text.className = 'ai-result-text';
+        text.textContent = result || '';
+        const actions = document.createElement('div');
+        actions.className = 'ai-result-item-actions';
+        const copyBtn = document.createElement('div');
+        copyBtn.className = 'ai-result-copy-btn';
+        copyBtn.textContent = '📋';
+        copyBtn.title = '复制';
+        copyBtn.onclick = () => copyText(result || '');
+        actions.appendChild(copyBtn);
+        item.appendChild(num);
+        item.appendChild(text);
+        item.appendChild(actions);
+        container.appendChild(item);
+        return;
     }
-    const el = document.getElementById(resultId);
-    if (el) {
-        // 使用textContent防止XSS，保留换行格式
-        el.innerHTML = '';
-        const pre = document.createElement('pre');
-        pre.style.whiteSpace = 'pre-wrap';
-        pre.style.wordBreak = 'break-word';
-        pre.style.margin = '0';
-        pre.style.fontFamily = 'inherit';
-        pre.textContent = result.result;
-        el.appendChild(pre);
-    }
-    showToast(successMsg + (result.demo_mode ? '（演示模式）' : ''), 'success');
-    loadUserInfo(); // 更新使用次数
-    return true;
+    
+    // 多条结果
+    result.forEach((text, index) => {
+        const item = document.createElement('div');
+        item.className = 'ai-result-item';
+        const num = document.createElement('div');
+        num.className = 'ai-result-num';
+        num.textContent = index + 1;
+        const textEl = document.createElement('div');
+        textEl.className = 'ai-result-text';
+        textEl.textContent = text;
+        const actions = document.createElement('div');
+        actions.className = 'ai-result-item-actions';
+        const copyBtn = document.createElement('div');
+        copyBtn.className = 'ai-result-copy-btn';
+        copyBtn.textContent = '📋';
+        copyBtn.title = '复制';
+        copyBtn.onclick = () => copyText(text);
+        actions.appendChild(copyBtn);
+        item.appendChild(num);
+        item.appendChild(textEl);
+        item.appendChild(actions);
+        container.appendChild(item);
+    });
+}
+
+function copyText(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('已复制到剪贴板', 'success');
+    }).catch(() => {
+        showToast('复制失败', 'error');
+    });
+}
+
+function copyAllResult(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const text = container.innerText;
+    copyText(text);
 }
 
 // ==================== 标题生成 ====================
+function fillTitleExample() {
+    document.getElementById('title-product').value = '纯棉短袖T恤';
+    document.getElementById('title-features').value = '100%纯棉、透气、百搭、不起球、不褪色';
+}
+
 async function generateTitle() {
-    const product = document.getElementById('title-product').value.trim();
-    if (!product) { showToast('请输入商品名称', 'warning'); return; }
+    const product_name = document.getElementById('title-product').value.trim();
+    const features = document.getElementById('title-features').value.trim();
+    const platform = document.getElementById('title-platform').value;
+    const style = document.getElementById('title-style').value;
+    const word_count = document.getElementById('title-wordcount').value;
     
-    const data = {
-        product_name: product,
-        features: document.getElementById('title-features').value,
-        platform: document.getElementById('title-platform').value,
-        style: document.getElementById('title-style').value,
-        word_count: document.getElementById('title-wordcount').value,
-        audience: document.getElementById('title-audience').value
-    };
-    const result = await callAIAPI('/api/generate-title', data, '正在生成10组优质标题...');
-    handleAPIResult(result, 'title-result', '标题生成成功！');
+    if (!product_name) {
+        showToast('请输入商品名称', 'error');
+        return;
+    }
+    
+    const result = await callAIAPI('/api/generate-title', {
+        product_name, features, platform, style, word_count
+    }, 'AI正在生成爆款标题...');
+    
+    if (!result) return;
+    if (!result.success) {
+        if (result.need_login) {
+            showPage('login');
+            return;
+        }
+        if (result.need_upgrade) {
+            showUpgradeModal(result.message);
+            return;
+        }
+        showToast(result.message || '生成失败', 'error');
+        return;
+    }
+    
+    // 解析结果为数组
+    const lines = result.result.split('\n').filter(line => line.trim());
+    renderAIResult('title-result', lines);
+    showToast('标题生成成功！' + (result.demo_mode ? '（演示模式）' : ''), 'success');
+    loadUserInfo();
 }
 
 // ==================== 详情页生成 ====================
 async function generateDetail() {
-    const product = document.getElementById('detail-product').value.trim();
+    const product_name = document.getElementById('detail-product').value.trim();
     const features = document.getElementById('detail-features').value.trim();
-    if (!product || !features) { showToast('请填写商品名称和核心卖点', 'warning'); return; }
+    const params = document.getElementById('detail-params').value.trim();
+    const platform = document.getElementById('detail-platform').value;
+    const style = document.getElementById('detail-style').value;
     
-    const data = {
-        product_name: product,
-        features: features,
-        params: document.getElementById('detail-params').value,
-        platform: document.getElementById('detail-platform').value,
-        style: document.getElementById('detail-style').value
-    };
-    const result = await callAIAPI('/api/generate-detail', data, '正在生成详情页全套文案...');
-    handleAPIResult(result, 'detail-result', '详情文案生成成功！');
+    if (!product_name || !features) {
+        showToast('请填写商品名称和核心卖点', 'error');
+        return;
+    }
+    
+    const result = await callAIAPI('/api/generate-detail', {
+        product_name, features, params, platform, style
+    }, 'AI正在生成详情页文案...');
+    
+    if (!result) return;
+    if (!result.success) {
+        if (result.need_login) { showPage('login'); return; }
+        if (result.need_upgrade) { showUpgradeModal(result.message); return; }
+        showToast(result.message || '生成失败', 'error');
+        return;
+    }
+    
+    renderAIResult('detail-result', result.result);
+    showToast('详情页生成成功！' + (result.demo_mode ? '（演示模式）' : ''), 'success');
+    loadUserInfo();
 }
 
 // ==================== 客服话术生成 ====================
 async function generateService() {
+    const scenario = document.getElementById('service-scenario').value;
     const question = document.getElementById('service-question').value.trim();
-    if (!question) { showToast('请输入具体问题场景', 'warning'); return; }
+    const style = document.getElementById('service-style').value;
     
-    const data = {
-        scenario: document.getElementById('service-scenario').value,
-        question: question,
-        style: document.getElementById('service-style').value
-    };
-    const result = await callAIAPI('/api/generate-service', data, '正在生成5套客服话术...');
-    handleAPIResult(result, 'service-result', '话术生成成功！');
+    if (!question) {
+        showToast('请输入客户问题', 'error');
+        return;
+    }
+    
+    const result = await callAIAPI('/api/generate-service', {
+        scenario, question, style
+    }, 'AI正在生成客服话术...');
+    
+    if (!result) return;
+    if (!result.success) {
+        if (result.need_login) { showPage('login'); return; }
+        if (result.need_upgrade) { showUpgradeModal(result.message); return; }
+        showToast(result.message || '生成失败', 'error');
+        return;
+    }
+    
+    renderAIResult('service-result', result.result);
+    showToast('话术生成成功！' + (result.demo_mode ? '（演示模式）' : ''), 'success');
+    loadUserInfo();
 }
 
 // ==================== 竞品分析 ====================
 async function analyzeCompetitor() {
     const url = document.getElementById('competitor-url').value.trim();
-    if (!url) { showToast('请输入竞品商品链接', 'warning'); return; }
-    
-    showLoading('正在智能爬取分析竞品数据...');
-    try {
-        const res = await fetch('/api/competitor-analysis', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({url})
-        });
-        const result = await res.json();
-        hideLoading();
-        
-        if (!result.success) {
-            if (result.need_upgrade) showUpgradeModal(result.message);
-            else showToast(result.message || '分析失败', 'error');
-            return;
-        }
-        
-        renderCompetitorResult(result.data);
-        showToast('竞品分析完成！' + (result.demo_mode ? '（演示模式）' : ''), 'success');
-        loadUserInfo();
-    } catch (e) {
-        hideLoading();
-        showToast('网络错误', 'error');
+    if (!url) {
+        showToast('请输入竞品商品链接', 'error');
+        return;
     }
+    
+    const result = await callAIAPI('/api/competitor-analysis', {url}, 'AI正在分析竞品数据...');
+    
+    if (!result) return;
+    if (!result.success) {
+        if (result.need_login) { showPage('login'); return; }
+        if (result.need_upgrade) { showUpgradeModal(result.message); return; }
+        showToast(result.message || '分析失败', 'error');
+        return;
+    }
+    
+    renderCompetitorResult(result.data);
+    document.getElementById('competitor-empty').style.display = 'none';
+    showToast('竞品分析完成！' + (result.demo_mode ? '（演示模式）' : ''), 'success');
+    loadUserInfo();
 }
 
 function renderCompetitorResult(data) {
@@ -314,7 +478,7 @@ function renderCompetitorResult(data) {
     container.style.display = 'block';
     container.innerHTML = '';
     
-    // 商品基本信息卡片
+    // 基本信息卡片
     const card1 = document.createElement('div');
     card1.className = 'competitor-data-card';
     const h3_1 = document.createElement('h3');
@@ -345,7 +509,7 @@ function renderCompetitorResult(data) {
     card1.appendChild(dataGrid);
     container.appendChild(card1);
     
-    // 评价关键词卡片
+    // 评价关键词
     const card2 = document.createElement('div');
     card2.className = 'competitor-data-card';
     const h3_good = document.createElement('h3');
@@ -376,7 +540,7 @@ function renderCompetitorResult(data) {
     card2.appendChild(tagList2);
     container.appendChild(card2);
     
-    // 促销活动卡片
+    // 促销活动
     const card3 = document.createElement('div');
     card3.className = 'competitor-data-card';
     const h3_promo = document.createElement('h3');
@@ -399,18 +563,17 @@ function renderCompetitorResult(data) {
     card3.appendChild(p_promo);
     container.appendChild(card3);
     
-    // AI总结卡片
+    // AI总结
     const card4 = document.createElement('div');
     card4.className = 'competitor-data-card';
     const summaryBox = document.createElement('div');
     summaryBox.className = 'ai-summary-box';
-    const h4_summary = document.createElement('h4');
-    h4_summary.textContent = '💡 AI竞品分析总结';
-    summaryBox.appendChild(h4_summary);
+    const h4 = document.createElement('h4');
+    h4.textContent = '💡 AI竞品分析总结';
     const summaryText = document.createElement('div');
     summaryText.className = 'result-text';
-    summaryText.style.whiteSpace = 'pre-wrap';
     summaryText.textContent = data.ai_summary || '';
+    summaryBox.appendChild(h4);
     summaryBox.appendChild(summaryText);
     card4.appendChild(summaryBox);
     container.appendChild(card4);
@@ -422,19 +585,9 @@ function renderCompetitorResult(data) {
     const btnCopy = document.createElement('button');
     btnCopy.className = 'btn btn-outline';
     btnCopy.textContent = '复制分析报告';
-    btnCopy.onclick = copyCompetitorResult;
+    btnCopy.onclick = () => copyAllResult('competitor-result');
     btnDiv.appendChild(btnCopy);
-    const btnExport = document.createElement('button');
-    btnExport.className = 'btn btn-primary';
-    btnExport.style.marginLeft = '12px';
-    btnExport.textContent = '导出Excel';
-    btnDiv.appendChild(btnExport);
     container.appendChild(btnDiv);
-}
-
-function copyCompetitorResult() {
-    const text = document.getElementById('competitor-result').innerText;
-    navigator.clipboard.writeText(text).then(() => showToast('已复制到剪贴板', 'success'));
 }
 
 // ==================== 店铺数据监控 ====================
@@ -447,6 +600,10 @@ async function loadShopData() {
         if (data.success && data.data) {
             renderShopData(data.data);
             showToast('数据加载成功！（演示模式）', 'success');
+        } else if (data.need_upgrade) {
+            showUpgradeModal(data.message);
+        } else {
+            showToast(data.message || '加载失败', 'error');
         }
     } catch (e) {
         hideLoading();
@@ -457,42 +614,47 @@ async function loadShopData() {
 function renderShopData(data) {
     const container = document.getElementById('shop-data-content');
     container.innerHTML = '';
-    const ov = data.overview || {};
     
-    // 概览卡片
-    const overviewCards = document.createElement('div');
-    overviewCards.className = 'overview-cards';
-    const cardData = [
-        {icon: '👥', label: '访客数', value: (ov.visitors || 0).toLocaleString()},
-        {icon: '📦', label: '订单量', value: ov.today_orders || 0},
-        {icon: '💰', label: '销售额', value: '¥' + (ov.today_sales || 0).toLocaleString()},
-        {icon: '📈', label: '转化率', value: (ov.conversion_rate || 0) + '%'}
+    // 统计卡片
+    const ov = data.overview || {};
+    const statsGrid = document.createElement('div');
+    statsGrid.className = 'stats-grid';
+    const stats = [
+        {icon: '👥', label: '访客数', value: (ov.visitors || 0).toLocaleString(), change: '+12.5%', cls: 'blue'},
+        {icon: '📦', label: '订单数', value: ov.today_orders || 0, change: '+8.3%', cls: 'green'},
+        {icon: '💰', label: '销售额', value: '¥' + (ov.today_sales || 0).toLocaleString(), change: '+15.2%', cls: 'purple'},
+        {icon: '📈', label: '转化率', value: (ov.conversion_rate || 0) + '%', change: '+2.1%', cls: 'orange'}
     ];
-    cardData.forEach(cd => {
+    stats.forEach(s => {
         const card = document.createElement('div');
-        card.className = 'overview-card';
+        card.className = 'stat-card';
         const icon = document.createElement('div');
-        icon.className = 'overview-card-icon';
-        icon.textContent = cd.icon;
+        icon.className = 'stat-icon ' + s.cls;
+        icon.textContent = s.icon;
         const info = document.createElement('div');
-        info.className = 'overview-card-info';
+        info.className = 'stat-info';
         const label = document.createElement('div');
-        label.className = 'overview-card-label';
-        label.textContent = cd.label;
+        label.className = 'stat-label';
+        label.textContent = s.label;
         const value = document.createElement('div');
-        value.className = 'overview-card-value';
-        value.textContent = cd.value;
+        value.className = 'stat-value';
+        value.textContent = s.value;
+        const change = document.createElement('div');
+        change.className = 'stat-change up';
+        change.textContent = '↑ ' + s.change + ' 较昨日';
         info.appendChild(label);
         info.appendChild(value);
+        info.appendChild(change);
         card.appendChild(icon);
         card.appendChild(info);
-        overviewCards.appendChild(card);
+        statsGrid.appendChild(card);
     });
-    container.appendChild(overviewCards);
+    container.appendChild(statsGrid);
     
-    // 热销商品排行
+    // 热销商品
     const card1 = document.createElement('div');
-    card1.className = 'admin-card';
+    card1.className = 'card';
+    card1.style.marginBottom = '24px';
     const header1 = document.createElement('div');
     header1.className = 'card-header';
     const h3_1 = document.createElement('h3');
@@ -500,44 +662,24 @@ function renderShopData(data) {
     header1.appendChild(h3_1);
     card1.appendChild(header1);
     const productList = document.createElement('div');
-    productList.style.padding = '16px 20px';
+    productList.className = 'card-body';
     (data.top_products || []).forEach((p, i) => {
         const row = document.createElement('div');
-        row.style.display = 'flex';
-        row.style.alignItems = 'center';
-        row.style.padding = '12px 0';
-        row.style.borderBottom = '1px solid var(--border-light)';
+        row.className = 'product-rank-item';
         const rank = document.createElement('span');
-        rank.style.width = '24px';
-        rank.style.height = '24px';
-        rank.style.borderRadius = '50%';
-        rank.style.background = i < 3 ? 'var(--primary)' : 'var(--bg-tertiary)';
-        rank.style.color = i < 3 ? '#fff' : 'var(--text-secondary)';
-        rank.style.display = 'flex';
-        rank.style.alignItems = 'center';
-        rank.style.justifyContent = 'center';
-        rank.style.fontSize = '12px';
-        rank.style.fontWeight = '600';
-        rank.style.marginRight = '12px';
+        rank.className = 'product-rank-num ' + (i < 3 ? 'top' : 'normal');
         rank.textContent = i + 1;
         const name = document.createElement('span');
-        name.style.flex = '1';
-        name.style.fontSize = '14px';
-        name.style.fontWeight = '500';
+        name.className = 'product-rank-name';
         name.textContent = p.name || '';
         const sales = document.createElement('span');
-        sales.style.marginRight = '24px';
-        sales.style.fontSize = '13px';
-        sales.style.color = 'var(--text-secondary)';
+        sales.className = 'product-rank-sales';
         sales.textContent = '销量 ' + (p.sales || 0);
         const revenue = document.createElement('span');
-        revenue.style.fontSize = '14px';
-        revenue.style.fontWeight = '600';
-        revenue.style.color = 'var(--primary)';
+        revenue.className = 'product-rank-revenue';
         revenue.textContent = '¥' + (p.revenue || 0).toLocaleString();
         const trend = document.createElement('span');
-        trend.style.marginLeft = '12px';
-        trend.style.fontSize = '16px';
+        trend.className = 'product-rank-trend';
         trend.textContent = p.trend === 'up' ? '📈' : '📉';
         row.appendChild(rank);
         row.appendChild(name);
@@ -549,63 +691,20 @@ function renderShopData(data) {
     card1.appendChild(productList);
     container.appendChild(card1);
     
-    // 流量来源分析
+    // 预警
     const card2 = document.createElement('div');
-    card2.className = 'admin-card';
+    card2.className = 'card';
     const header2 = document.createElement('div');
     header2.className = 'card-header';
     const h3_2 = document.createElement('h3');
-    h3_2.textContent = '流量来源分析';
+    h3_2.textContent = '⚠️ 数据异常预警';
     header2.appendChild(h3_2);
     card2.appendChild(header2);
-    const trafficList = document.createElement('div');
-    trafficList.style.padding = '16px 20px';
-    (data.traffic_sources || []).forEach(s => {
-        const item = document.createElement('div');
-        item.style.marginBottom = '16px';
-        const infoRow = document.createElement('div');
-        infoRow.style.display = 'flex';
-        infoRow.style.justifyContent = 'space-between';
-        infoRow.style.marginBottom = '6px';
-        infoRow.style.fontSize = '13px';
-        const nameSpan = document.createElement('span');
-        nameSpan.textContent = s.name || '';
-        const percentSpan = document.createElement('span');
-        percentSpan.textContent = (s.percent || 0) + '% (' + (s.visitors || 0) + '人)';
-        infoRow.appendChild(nameSpan);
-        infoRow.appendChild(percentSpan);
-        const barBg = document.createElement('div');
-        barBg.style.height = '8px';
-        barBg.style.background = 'var(--bg-tertiary)';
-        barBg.style.borderRadius = '4px';
-        barBg.style.overflow = 'hidden';
-        const barFill = document.createElement('div');
-        barFill.style.height = '100%';
-        barFill.style.width = (s.percent || 0) + '%';
-        barFill.style.background = 'var(--primary)';
-        barFill.style.borderRadius = '4px';
-        barBg.appendChild(barFill);
-        item.appendChild(infoRow);
-        item.appendChild(barBg);
-        trafficList.appendChild(item);
-    });
-    card2.appendChild(trafficList);
-    container.appendChild(card2);
-    
-    // 数据异常预警
-    const card3 = document.createElement('div');
-    card3.className = 'admin-card';
-    const header3 = document.createElement('div');
-    header3.className = 'card-header';
-    const h3_3 = document.createElement('h3');
-    h3_3.textContent = '⚠️ 数据异常预警';
-    header3.appendChild(h3_3);
-    card3.appendChild(header3);
     const alertList = document.createElement('div');
-    alertList.className = 'alert-list';
+    alertList.className = 'card-body';
     (data.alerts || []).forEach(a => {
-        const alertItem = document.createElement('div');
-        alertItem.className = 'alert-item ' + (a.type || 'info');
+        const item = document.createElement('div');
+        item.className = 'alert-item ' + (a.type || 'info');
         const icon = document.createElement('span');
         icon.className = 'alert-icon';
         icon.textContent = a.type === 'warning' ? '⚠️' : a.type === 'danger' ? '🔴' : 'ℹ️';
@@ -615,13 +714,13 @@ function renderShopData(data) {
         const time = document.createElement('span');
         time.className = 'alert-time';
         time.textContent = a.time || '';
-        alertItem.appendChild(icon);
-        alertItem.appendChild(text);
-        alertItem.appendChild(time);
-        alertList.appendChild(alertItem);
+        item.appendChild(icon);
+        item.appendChild(text);
+        item.appendChild(time);
+        alertList.appendChild(item);
     });
-    card3.appendChild(alertList);
-    container.appendChild(card3);
+    card2.appendChild(alertList);
+    container.appendChild(card2);
 }
 
 // ==================== AI运营诊断 ====================
@@ -629,10 +728,12 @@ async function runDiagnosis() {
     const result = await callAIAPI('/api/operation-diagnosis', {}, 'AI正在深度诊断店铺运营...');
     if (!result) return;
     if (!result.success) {
-        if (result.need_upgrade) showUpgradeModal(result.message);
-        else showToast(result.message || '诊断失败', 'error');
+        if (result.need_login) { showPage('login'); return; }
+        if (result.need_upgrade) { showUpgradeModal(result.message); return; }
+        showToast(result.message || '诊断失败', 'error');
         return;
     }
+    
     const container = document.getElementById('diagnosis-result');
     container.style.display = 'block';
     container.innerHTML = '';
@@ -644,106 +745,100 @@ async function runDiagnosis() {
     h4.textContent = '💡 AI智能运营诊断报告';
     const resultText = document.createElement('div');
     resultText.className = 'result-text';
-    resultText.style.whiteSpace = 'pre-wrap';
     resultText.textContent = result.result || '';
     summaryBox.appendChild(h4);
     summaryBox.appendChild(resultText);
     card.appendChild(summaryBox);
     container.appendChild(card);
+    
     const btnDiv = document.createElement('div');
     btnDiv.style.textAlign = 'center';
-    btnDiv.style.marginBottom = '20px';
+    btnDiv.style.marginTop = '20px';
     const btnCopy = document.createElement('button');
     btnCopy.className = 'btn btn-outline';
     btnCopy.textContent = '复制诊断报告';
-    btnCopy.onclick = () => copyResult('diagnosis-result');
-    const btnExport = document.createElement('button');
-    btnExport.className = 'btn btn-primary';
-    btnExport.style.marginLeft = '12px';
-    btnExport.textContent = '导出PDF';
+    btnCopy.onclick = () => copyAllResult('diagnosis-result');
     btnDiv.appendChild(btnCopy);
-    btnDiv.appendChild(btnExport);
     container.appendChild(btnDiv);
+    
     showToast('诊断完成！' + (result.demo_mode ? '（演示模式）' : ''), 'success');
     loadUserInfo();
 }
 
 // ==================== 报表生成 ====================
 async function generateReport() {
-    const reportType = document.getElementById('report-type').value;
-    const result = await callAIAPI('/api/generate-report', {report_type: reportType}, '正在生成专业运营报表...');
+    const report_type = document.getElementById('report-type').value;
+    const result = await callAIAPI('/api/generate-report', {report_type}, '正在生成专业运营报表...');
     if (!result) return;
     if (!result.success) {
-        if (result.need_upgrade) showUpgradeModal(result.message);
-        else showToast(result.message || '生成失败', 'error');
+        if (result.need_login) { showPage('login'); return; }
+        if (result.need_upgrade) { showUpgradeModal(result.message); return; }
+        showToast(result.message || '生成失败', 'error');
         return;
     }
+    
     const container = document.getElementById('report-result');
-    container.style.display = 'block';
     container.innerHTML = '';
     const card = document.createElement('div');
     card.className = 'competitor-data-card';
     const summaryBox = document.createElement('div');
     summaryBox.className = 'ai-summary-box';
     const h4 = document.createElement('h4');
-    h4.textContent = '📋 ' + (reportType === 'weekly' ? '运营周报' : '运营月报');
+    h4.textContent = '📋 ' + (report_type === 'weekly' ? '运营周报' : '运营月报');
     const resultText = document.createElement('div');
     resultText.className = 'result-text';
-    resultText.style.whiteSpace = 'pre-wrap';
     resultText.textContent = result.result || '';
     summaryBox.appendChild(h4);
     summaryBox.appendChild(resultText);
     card.appendChild(summaryBox);
     container.appendChild(card);
-    const btnDiv = document.createElement('div');
-    btnDiv.style.textAlign = 'center';
-    btnDiv.style.marginBottom = '20px';
-    const btnCopy = document.createElement('button');
-    btnCopy.className = 'btn btn-outline';
-    btnCopy.textContent = '复制报表';
-    btnCopy.onclick = () => copyResult('report-result');
-    const btnWord = document.createElement('button');
-    btnWord.className = 'btn btn-primary';
-    btnWord.style.marginLeft = '12px';
-    btnWord.textContent = '导出Word';
-    const btnPdf = document.createElement('button');
-    btnPdf.className = 'btn btn-outline';
-    btnPdf.style.marginLeft = '12px';
-    btnPdf.textContent = '导出PDF';
-    btnDiv.appendChild(btnCopy);
-    btnDiv.appendChild(btnWord);
-    btnDiv.appendChild(btnPdf);
-    container.appendChild(btnDiv);
+    
     showToast('报表生成成功！' + (result.demo_mode ? '（演示模式）' : ''), 'success');
     loadUserInfo();
 }
 
 // ==================== 店铺绑定 ====================
+function showBindShopModal() {
+    document.getElementById('bind-shop-modal').classList.add('active');
+}
+
 async function bindShop() {
     const platform = document.getElementById('bind-platform').value;
-    const shopName = document.getElementById('bind-shop-name').value.trim();
-    const authCode = document.getElementById('bind-auth-code').value.trim();
+    const shop_name = document.getElementById('bind-shop-name').value.trim();
+    const auth_code = document.getElementById('bind-auth-code').value.trim();
     
-    if (!shopName || !authCode) { showToast('请填写完整信息', 'warning'); return; }
+    if (!shop_name || !auth_code) {
+        showToast('请填写完整信息', 'error');
+        return;
+    }
     
-    showLoading('正在绑定店铺...');
+    showLoading('绑定中...');
     try {
         const res = await fetch('/api/bind-shop', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({platform, shop_name: shopName, auth_code: authCode})
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({platform, shop_name, auth_code})
         });
         const data = await res.json();
         hideLoading();
+        
         if (data.success) {
-            showToast('店铺绑定成功！', 'success');
+            showToast('店铺绑定成功', 'success');
+            closeModal('bind-shop-modal');
             document.getElementById('bind-shop-name').value = '';
             document.getElementById('bind-auth-code').value = '';
-            await loadBoundShops();
+            loadBoundShops();
         } else {
-            if (data.need_upgrade) showUpgradeModal(data.message);
-            else showToast(data.message || '绑定失败', 'error');
+            if (data.need_upgrade) {
+                showUpgradeModal(data.message);
+                return;
+            }
+            showToast(data.message || '绑定失败', 'error');
         }
-    } catch (e) { hideLoading(); showToast('网络错误', 'error'); }
+    } catch (e) {
+        hideLoading();
+        showToast('网络错误', 'error');
+    }
 }
 
 async function loadBoundShops() {
@@ -754,41 +849,58 @@ async function loadBoundShops() {
         const data = await res.json();
         if (data.success && data.shops && data.shops.length > 0) {
             data.shops.forEach(s => {
-                const shopItem = document.createElement('div');
-                shopItem.className = 'shop-item';
+                const card = document.createElement('div');
+                card.className = 'shop-card';
+                const header = document.createElement('div');
+                header.className = 'shop-card-header';
+                const icon = document.createElement('div');
+                icon.className = 'shop-platform-icon';
+                icon.textContent = '🏪';
                 const info = document.createElement('div');
-                info.className = 'shop-item-info';
-                const platform = document.createElement('div');
-                platform.className = 'shop-platform';
-                platform.textContent = '🏪';
-                const detail = document.createElement('div');
+                info.className = 'shop-info';
                 const name = document.createElement('div');
                 name.className = 'shop-name';
                 name.textContent = s.shop_name || '';
                 const status = document.createElement('div');
                 status.className = 'shop-status';
-                status.textContent = '● ' + (s.platform || '') + ' | 已绑定 | 数据同步中';
-                detail.appendChild(name);
-                detail.appendChild(status);
-                info.appendChild(platform);
-                info.appendChild(detail);
+                status.textContent = '● ' + (s.platform || '') + ' | 已绑定';
+                info.appendChild(name);
+                info.appendChild(status);
+                header.appendChild(icon);
+                header.appendChild(info);
+                card.appendChild(header);
+                
+                const stats = document.createElement('div');
+                stats.className = 'shop-card-stats';
+                stats.innerHTML = '<div><div class="shop-stat-label">今日订单</div><div class="shop-stat-value">--</div></div><div><div class="shop-stat-label">今日销售额</div><div class="shop-stat-value">--</div></div>';
+                card.appendChild(stats);
+                
+                const actions = document.createElement('div');
+                actions.className = 'shop-card-actions';
+                const syncBtn = document.createElement('button');
+                syncBtn.className = 'btn btn-outline btn-sm';
+                syncBtn.textContent = '同步数据';
                 const unbindBtn = document.createElement('button');
                 unbindBtn.className = 'btn btn-outline btn-sm';
                 unbindBtn.textContent = '解绑';
                 unbindBtn.onclick = () => unbindShop(s.id);
-                shopItem.appendChild(info);
-                shopItem.appendChild(unbindBtn);
-                container.appendChild(shopItem);
+                actions.appendChild(syncBtn);
+                actions.appendChild(unbindBtn);
+                card.appendChild(actions);
+                
+                container.appendChild(card);
             });
         } else {
             const empty = document.createElement('div');
             empty.className = 'empty-state';
-            empty.textContent = '暂无绑定店铺，请先绑定店铺';
+            empty.style.gridColumn = '1/-1';
+            empty.innerHTML = '<div class="empty-state-icon">🏪</div><p class="empty-state-text">暂无绑定店铺，点击上方按钮绑定</p>';
             container.appendChild(empty);
         }
     } catch (e) {
         const empty = document.createElement('div');
         empty.className = 'empty-state';
+        empty.style.gridColumn = '1/-1';
         empty.textContent = '加载店铺列表失败';
         container.appendChild(empty);
     }
@@ -798,7 +910,8 @@ async function unbindShop(shopId) {
     if (!confirm('确定要解绑该店铺吗？')) return;
     try {
         const res = await fetch('/api/unbind-shop', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({shop_id: shopId})
         });
         const data = await res.json();
@@ -810,85 +923,122 @@ async function unbindShop(shopId) {
 }
 
 // ==================== 会员升级 ====================
-async function upgradePlan(plan) {
-    showLoading('正在处理升级...');
+function loadPricingAdmin() {
+    if (userInfo) {
+        const planNames = {free: '免费版', monthly: '月付版', yearly: '年付版', enterprise: '企业版'};
+        document.getElementById('current-plan-name').textContent = planNames[userInfo.plan] || '免费版';
+        document.getElementById('plan-ai-usage').textContent = userInfo.daily_ai_usage || 0;
+        document.getElementById('plan-ai-limit').textContent = userInfo.daily_ai_limit || 10;
+    }
+}
+
+function showUpgradeModal(message) {
+    document.getElementById('upgrade-modal').classList.add('active');
+}
+
+async function confirmUpgrade() {
+    const plan = document.querySelector('input[name="upgrade-plan"]:checked').value;
+    showLoading('升级处理中...');
     try {
         const res = await fetch('/api/upgrade-plan', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({plan})
         });
         const data = await res.json();
         hideLoading();
         if (data.success) {
-            showToast('已升级为' + data.message.replace('已升级为', ''), 'success');
+            showToast('升级成功！', 'success');
+            closeModal('upgrade-modal');
             loadUserInfo();
+            loadPricingAdmin();
         } else {
             showToast(data.message || '升级失败', 'error');
         }
-    } catch (e) { hideLoading(); showToast('网络错误', 'error'); }
+    } catch (e) {
+        hideLoading();
+        showToast('网络错误', 'error');
+    }
+}
+
+// ==================== 个人中心 ====================
+function loadProfile() {
+    if (!userInfo) return;
+    const firstChar = (userInfo.username || '用').charAt(0).toUpperCase();
+    document.getElementById('profile-avatar').textContent = firstChar;
+    document.getElementById('profile-username').textContent = userInfo.username || '';
+    document.getElementById('profile-phone').textContent = userInfo.phone_masked || '';
 }
 
 // ==================== 弹窗控制 ====================
-function showUpgradeModal(message) {
-    document.getElementById('modal-title').textContent = '升级会员';
-    document.getElementById('modal-message').innerHTML = message + '<br><br>升级后可解锁全部高级功能，不限次数使用！';
-    document.getElementById('modal-confirm-btn').textContent = '立即升级';
-    document.getElementById('modal-confirm-btn').onclick = () => { closeModal(); switchAdminPage('pricing-admin'); };
-    document.getElementById('modal-overlay').classList.add('active');
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
 }
 
-function showModal(title, message) {
-    document.getElementById('modal-title').textContent = title;
-    document.getElementById('modal-message').textContent = message;
-    document.getElementById('modal-confirm-btn').textContent = '确定';
-    document.getElementById('modal-confirm-btn').onclick = closeModal;
-    document.getElementById('modal-overlay').classList.add('active');
+// 点击遮罩关闭弹窗
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal-overlay')) {
+        e.target.classList.remove('active');
+    }
+});
+
+// ==================== Toast提示 ====================
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    
+    const icons = {success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️'};
+    const icon = document.createElement('span');
+    icon.className = 'toast-icon';
+    icon.textContent = icons[type] || 'ℹ️';
+    
+    const msg = document.createElement('span');
+    msg.className = 'toast-message';
+    msg.textContent = message;
+    
+    const close = document.createElement('span');
+    close.className = 'toast-close';
+    close.textContent = '×';
+    close.onclick = () => removeToast(toast);
+    
+    toast.appendChild(icon);
+    toast.appendChild(msg);
+    toast.appendChild(close);
+    container.appendChild(toast);
+    
+    setTimeout(() => removeToast(toast), 3000);
 }
 
-function closeModal() {
-    document.getElementById('modal-overlay').classList.remove('active');
+function removeToast(toast) {
+    toast.style.animation = 'toastOut 0.3s ease-out forwards';
+    setTimeout(() => {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 300);
 }
 
-// ==================== 工具函数 ====================
-function showLoading(text = 'AI正在生成中...') {
-    document.getElementById('loading-text').textContent = text;
-    document.getElementById('loading-overlay').classList.add('active');
+// ==================== 加载遮罩 ====================
+function showLoading(text) {
+    const overlay = document.getElementById('loading-overlay');
+    const loadingText = document.getElementById('loading-text');
+    if (loadingText) loadingText.textContent = text || '加载中...';
+    if (overlay) overlay.classList.add('active');
 }
 
 function hideLoading() {
-    document.getElementById('loading-overlay').classList.remove('active');
-}
-
-function showToast(message, type = 'info') {
-    const toast = document.getElementById('toast');
-    toast.textContent = message;
-    toast.className = 'toast show ' + type;
-    setTimeout(() => toast.classList.remove('show'), 3000);
-}
-
-function copyResult(elementId) {
-    const el = document.getElementById(elementId);
-    const text = el.innerText || el.textContent;
-    if (!text || text.includes('填写左侧') || text.includes('点击生成')) {
-        showToast('暂无内容可复制', 'warning');
-        return;
-    }
-    navigator.clipboard.writeText(text).then(() => showToast('已复制到剪贴板', 'success'))
-        .catch(() => {
-            const ta = document.createElement('textarea');
-            ta.value = text; document.body.appendChild(ta);
-            ta.select(); document.execCommand('copy');
-            document.body.removeChild(ta);
-            showToast('已复制到剪贴板', 'success');
-        });
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) overlay.classList.remove('active');
 }
 
 // ==================== 初始化 ====================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     // 检查登录状态
-    fetch('/api/user-info').then(r => r.json()).then(data => {
-        if (data.logged_in && currentPage === 'landing') {
-            // 已登录停留在首页也可以，不强制跳转
+    fetch('/api/user-info').then(res => res.json()).then(data => {
+        if (data.logged_in) {
+            userInfo = data;
         }
-    });
+    }).catch(() => {});
+    
+    // 导航栏滚动
+    initNavScroll();
 });

@@ -3,1076 +3,1455 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>电商AI运营助手 - 一站式电商AI运营工具</title>
+    <meta name="description" content="电商AI运营助手 - 一站式AI驱动的电商运营工具，标题生成、详情页优化、竞品分析、数据监控，解放卖家双手">
+    <meta name="keywords" content="电商AI,电商运营,标题生成,竞品分析,店铺运营,AI工具">
+    <title>电商AI运营助手 - 一站式AI电商运营工具</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
+    <a href="#main-content" class="skip-link">跳过导航</a>
 
-<!-- ==================== 前台首页 ==================== -->
-<div id="page-landing" class="page active">
-    <!-- 顶部导航 -->
-    <nav class="front-nav">
-        <div class="nav-inner">
-            <div class="logo" onclick="showPage('landing')">
-                <span class="logo-icon">🛒</span>
-                <span class="logo-text">电商AI运营助手</span>
+    <!-- ==================== 首页 Landing Page ==================== -->
+    <div id="page-landing" class="page active">
+        <!-- 导航栏 -->
+        <nav class="landing-nav" id="landing-nav">
+            <div class="nav-container">
+                <div class="nav-logo" onclick="showPage('landing')">
+                    <div class="nav-logo-icon">🛒</div>
+                    <span class="nav-logo-text">电商AI运营助手</span>
+                </div>
+                <div class="nav-links">
+                    <span class="nav-link active" onclick="showPage('landing')">首页</span>
+                    <span class="nav-link" onclick="scrollToFeatures()">功能介绍</span>
+                    <span class="nav-link" onclick="showPage('pricing')">价格套餐</span>
+                    <span class="nav-link" onclick="showPage('help')">帮助中心</span>
+                </div>
+                <div class="nav-actions">
+                    <button class="btn btn-text" onclick="showPage('login')">登录</button>
+                    <button class="btn btn-primary" onclick="showPage('register')">免费注册 →</button>
+                </div>
             </div>
-            <div class="nav-menu">
-                <a href="javascript:void(0)" onclick="showPage('landing')">首页</a>
-                <a href="javascript:void(0)" onclick="scrollToFeatures()">功能介绍</a>
-                <a href="javascript:void(0)" onclick="showPage('pricing')">价格套餐</a>
-                <a href="javascript:void(0)" onclick="showPage('help')">使用教程</a>
-                <a href="javascript:void(0)" onclick="showPage('help')">帮助中心</a>
-            </div>
-            <div class="nav-btns">
-                <button class="btn btn-outline btn-sm" onclick="showPage('login')">登录</button>
-                <button class="btn btn-primary btn-sm" onclick="showPage('register')">免费注册</button>
-            </div>
-        </div>
-    </nav>
+        </nav>
 
-    <!-- 首屏Banner -->
-    <section class="hero-banner">
-        <div class="hero-content">
-            <h1 class="hero-title">一站式电商AI运营助手，解放卖家双手</h1>
-            <p class="hero-subtitle">AI生成标题/详情/话术、竞品监控、店铺数据可视化、智能运营诊断、自动生成报表</p>
-            <div class="hero-btns">
-                <button class="btn btn-primary btn-lg" onclick="showPage('register')">立即免费试用</button>
-                <button class="btn btn-outline-white btn-lg" onclick="scrollToFeatures()">查看功能详情</button>
-            </div>
-        </div>
-        <div class="hero-decor">
-            <div class="decor-card decor-1">📈 销量+35%</div>
-            <div class="decor-card decor-2">🤖 AI生成中</div>
-            <div class="decor-card decor-3">🎯 转化率+28%</div>
-        </div>
-    </section>
-
-    <!-- 核心功能介绍 -->
-    <section id="features-section" class="features-section">
-        <div class="container">
-            <h2 class="section-title">六大核心功能，全覆盖电商运营需求</h2>
-            <p class="section-desc">从内容生成到数据分析，AI全方位赋能你的电商店铺</p>
-            <div class="features-grid">
-                <div class="feature-card" onclick="goToFunction('title')">
-                    <div class="feature-icon icon-1">📝</div>
-                    <h3>AI商品内容生成</h3>
-                    <p>一键标题、详情页、卖点文案批量生成，适配淘宝/拼多多/抖音/小红书</p>
+        <!-- Hero主视觉区 -->
+        <section class="hero-section">
+            <div class="hero-container">
+                <div class="hero-badge">
+                    <span>✨</span>
+                    <span>AI驱动 · 电商卖家必备工具</span>
                 </div>
-                <div class="feature-card" onclick="goToFunction('competitor')">
-                    <div class="feature-icon icon-2">🔍</div>
-                    <h3>竞品数据分析</h3>
-                    <p>自动爬取同行价格、销量、评价、活动策略，知己知彼百战不殆</p>
-                </div>
-                <div class="feature-card" onclick="goToFunction('shop-data')">
-                    <div class="feature-icon icon-3">📊</div>
-                    <h3>店铺数据看板</h3>
-                    <p>流量、订单、转化、营收实时可视化监控，数据异常自动预警</p>
-                </div>
-                <div class="feature-card" onclick="goToFunction('diagnosis')">
-                    <div class="feature-icon icon-4">💡</div>
-                    <h3>AI智能运营建议</h3>
-                    <p>数据自动诊断，给出可落地优化方案，7天执行计划直接照做</p>
-                </div>
-                <div class="feature-card" onclick="goToFunction('report')">
-                    <div class="feature-icon icon-5">📋</div>
-                    <h3>自动化报表</h3>
-                    <p>一键生成周报、月报、店铺运营总结，支持导出Word/PDF/Excel</p>
-                </div>
-                <div class="feature-card" onclick="goToFunction('service')">
-                    <div class="feature-icon icon-6">💬</div>
-                    <h3>智能客服话术</h3>
-                    <p>售前、售中、售后全自动话术生成，5种风格一键复制直接用</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 价格套餐 -->
-    <section class="pricing-section">
-        <div class="container">
-            <h2 class="section-title">透明定价，按需选择</h2>
-            <p class="section-desc">免费版永久可用，付费版解锁全部功能</p>
-            <div class="pricing-grid">
-                <div class="price-card">
-                    <div class="price-name">免费版</div>
-                    <div class="price-amount">¥0<span>/永久</span></div>
-                    <ul class="price-features">
-                        <li>✓ AI生成每日10次</li>
-                        <li>✓ 竞品分析每日3次</li>
-                        <li>✗ 数据导出</li>
-                        <li>✗ AI运营诊断</li>
-                        <li>✗ 月报生成</li>
-                        <li>✗ 多店铺管理</li>
-                    </ul>
-                    <button class="btn btn-outline btn-block" onclick="showPage('register')">立即开通</button>
-                </div>
-                <div class="price-card price-card-hot">
-                    <div class="hot-tag">最受欢迎</div>
-                    <div class="price-name">月付版</div>
-                    <div class="price-amount">¥39<span>/月</span></div>
-                    <ul class="price-features">
-                        <li>✓ AI生成不限次数</li>
-                        <li>✓ 竞品分析不限次数</li>
-                        <li>✓ 数据导出</li>
-                        <li>✓ AI运营诊断</li>
-                        <li>✓ 月报生成</li>
-                        <li>✗ 多店铺管理</li>
-                    </ul>
-                    <button class="btn btn-primary btn-block" onclick="showPage('register')">立即开通</button>
-                </div>
-                <div class="price-card">
-                    <div class="price-name">年付版</div>
-                    <div class="price-amount">¥399<span>/年</span></div>
-                    <ul class="price-features">
-                        <li>✓ AI生成不限次数</li>
-                        <li>✓ 竞品分析不限次数</li>
-                        <li>✓ 数据导出</li>
-                        <li>✓ AI运营诊断</li>
-                        <li>✓ 月报生成</li>
-                        <li>✗ 多店铺管理</li>
-                    </ul>
-                    <button class="btn btn-outline btn-block" onclick="showPage('register')">立即开通</button>
-                </div>
-                <div class="price-card">
-                    <div class="price-name">企业版</div>
-                    <div class="price-amount">¥199<span>/月起</span></div>
-                    <ul class="price-features">
-                        <li>✓ 全部功能无限制</li>
-                        <li>✓ 支持10店绑定</li>
-                        <li>✓ API数据对接</li>
-                        <li>✓ 批量AI生成</li>
-                        <li>✓ 定制报表</li>
-                        <li>✓ 专属客服对接</li>
-                    </ul>
-                    <button class="btn btn-outline btn-block" onclick="showPage('register')">联系客服</button>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 底部Footer -->
-    <footer class="front-footer">
-        <div class="container">
-            <div class="footer-grid">
-                <div class="footer-col">
-                    <div class="logo">
-                        <span class="logo-icon">🛒</span>
-                        <span class="logo-text">电商AI运营助手</span>
-                    </div>
-                    <p class="footer-desc">AI驱动的电商运营智能工具，帮助中小卖家提升效率，增长销量。</p>
-                </div>
-                <div class="footer-col">
-                    <h4>产品</h4>
-                    <a href="javascript:void(0)" onclick="scrollToFeatures()">功能介绍</a>
-                    <a href="javascript:void(0)" onclick="showPage('pricing')">价格套餐</a>
-                    <a href="javascript:void(0)" onclick="showPage('help')">更新日志</a>
-                </div>
-                <div class="footer-col">
-                    <h4>支持</h4>
-                    <a href="javascript:void(0)" onclick="showPage('help')">帮助中心</a>
-                    <a href="javascript:void(0)" onclick="showPage('help')">使用教程</a>
-                    <a href="javascript:void(0)">联系客服</a>
-                </div>
-                <div class="footer-col">
-                    <h4>关于</h4>
-                    <a href="javascript:void(0)">关于我们</a>
-                    <a href="javascript:void(0)">隐私政策</a>
-                    <a href="javascript:void(0)">用户协议</a>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>© 2026 电商AI运营助手. 保留所有权利.</p>
-            </div>
-        </div>
-    </footer>
-</div>
-
-<!-- ==================== 登录/注册页面 ==================== -->
-<div id="page-login" class="page auth-page">
-    <div class="auth-box">
-        <div class="auth-header">
-            <div class="logo" onclick="showPage('landing')">
-                <span class="logo-icon">🛒</span>
-                <span class="logo-text">电商AI运营助手</span>
-            </div>
-        </div>
-        <div class="auth-tabs">
-            <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">用户登录</button>
-            <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">免费注册</button>
-        </div>
-        
-        <!-- 登录表单 -->
-        <form id="login-form" class="auth-form active" onsubmit="handleLogin(event)">
-            <div class="form-group">
-                <label class="form-label">手机号</label>
-                <input type="text" id="login-phone" class="form-input" placeholder="请输入注册手机号" maxlength="11" autocomplete="tel" name="phone">
-            </div>
-            <div class="form-group">
-                <label class="form-label">密码</label>
-                <input type="password" id="login-password" class="form-input" placeholder="请输入密码" autocomplete="current-password" name="password">
-            </div>
-            <div class="form-options">
-                <label class="checkbox-label">
-                    <input type="checkbox" id="remember-me">
-                    <span>记住登录状态</span>
-                </label>
-            </div>
-            <button type="submit" class="btn btn-primary btn-block btn-lg">立即登录</button>
-            <p class="auth-switch">没有账号？<a href="javascript:void(0)" onclick="switchAuthTab('register')">立即注册</a></p>
-        </form>
-
-        <!-- 注册表单 -->
-        <form id="register-form" class="auth-form" onsubmit="handleRegister(event)">
-            <div class="form-group">
-                <label class="form-label">手机号</label>
-                <input type="text" id="register-phone" class="form-input" placeholder="请输入手机号" maxlength="11" autocomplete="tel" name="phone">
-            </div>
-            <div class="form-group">
-                <label class="form-label">设置密码</label>
-                <input type="password" id="register-password" class="form-input" placeholder="至少8位，含大小写字母和数字" autocomplete="new-password" name="new-password">
-            </div>
-            <div class="form-group">
-                <label class="form-label">确认密码</label>
-                <input type="password" id="register-confirm" class="form-input" placeholder="再次输入密码" autocomplete="new-password" name="confirm-password">
-            </div>
-            <div class="form-options">
-                <label class="checkbox-label">
-                    <input type="checkbox" id="agree-terms" required>
-                    <span>已阅读并同意<a href="javascript:void(0)">《用户协议》</a><a href="javascript:void(0)">《隐私政策》</a></span>
-                </label>
-            </div>
-            <button type="submit" class="btn btn-primary btn-block btn-lg">立即注册</button>
-            <p class="auth-switch">已有账号？<a href="javascript:void(0)" onclick="switchAuthTab('login')">立即登录</a></p>
-        </form>
-    </div>
-</div>
-
-<!-- 注册页面别名（共用登录页） -->
-<div id="page-register" class="page auth-page">
-    <div class="auth-box">
-        <div class="auth-header">
-            <div class="logo" onclick="showPage('landing')">
-                <span class="logo-icon">🛒</span>
-                <span class="logo-text">电商AI运营助手</span>
-            </div>
-        </div>
-        <div class="auth-tabs">
-            <button class="auth-tab" onclick="showPage('login')">用户登录</button>
-            <button class="auth-tab active">免费注册</button>
-        </div>
-        <form class="auth-form active" onsubmit="handleRegister(event)">
-            <div class="form-group">
-                <label class="form-label">手机号</label>
-                <input type="text" id="register-phone2" class="form-input" placeholder="请输入手机号" maxlength="11" autocomplete="tel" name="phone">
-            </div>
-            <div class="form-group">
-                <label class="form-label">设置密码</label>
-                <input type="password" id="register-password2" class="form-input" placeholder="至少8位，含大小写字母和数字" autocomplete="new-password" name="new-password">
-            </div>
-            <div class="form-group">
-                <label class="form-label">确认密码</label>
-                <input type="password" id="register-confirm2" class="form-input" placeholder="再次输入密码" autocomplete="new-password" name="confirm-password">
-            </div>
-            <div class="form-options">
-                <label class="checkbox-label">
-                    <input type="checkbox" required>
-                    <span>已阅读并同意<a href="javascript:void(0)">《用户协议》</a><a href="javascript:void(0)">《隐私政策》</a></span>
-                </label>
-            </div>
-            <button type="submit" class="btn btn-primary btn-block btn-lg">立即注册</button>
-            <p class="auth-switch">已有账号？<a href="javascript:void(0)" onclick="showPage('login')">立即登录</a></p>
-        </form>
-    </div>
-</div>
-
-<!-- ==================== 价格套餐详情页 ==================== -->
-<div id="page-pricing" class="page">
-    <nav class="front-nav">
-        <div class="nav-inner">
-            <div class="logo" onclick="showPage('landing')">
-                <span class="logo-icon">🛒</span>
-                <span class="logo-text">电商AI运营助手</span>
-            </div>
-            <div class="nav-btns">
-                <button class="btn btn-outline btn-sm" onclick="showPage('login')">登录</button>
-                <button class="btn btn-primary btn-sm" onclick="showPage('register')">免费注册</button>
-            </div>
-        </div>
-    </nav>
-    <div class="pricing-detail-page">
-        <div class="container">
-            <h1 class="page-main-title">价格套餐详情</h1>
-            <p class="page-main-desc">完整展示四个版本的全部权限明细，按需选择最适合你的方案</p>
-            
-            <div class="pricing-compare-table">
-                <table class="compare-table">
-                    <thead>
-                        <tr>
-                            <th>功能权限</th>
-                            <th>免费版</th>
-                            <th class="highlight-col">月付版 ¥39/月</th>
-                            <th>年付版 ¥399/年</th>
-                            <th>企业版 ¥199/月起</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>AI生成次数</td><td>每日10次</td><td class="highlight-col">不限次数</td><td>不限次数</td><td>不限次数</td></tr>
-                        <tr><td>竞品分析次数</td><td>每日3次</td><td class="highlight-col">不限次数</td><td>不限次数</td><td>不限次数</td></tr>
-                        <tr><td>数据监控权限</td><td>✗</td><td class="highlight-col">✓</td><td>✓</td><td>✓</td></tr>
-                        <tr><td>AI运营诊断</td><td>✗</td><td class="highlight-col">✓</td><td>✓</td><td>✓</td></tr>
-                        <tr><td>周报生成</td><td>简易版</td><td class="highlight-col">专业版</td><td>专业版</td><td>定制版</td></tr>
-                        <tr><td>月报生成</td><td>✗</td><td class="highlight-col">✓</td><td>✓</td><td>✓</td></tr>
-                        <tr><td>数据导出</td><td>✗</td><td class="highlight-col">✓</td><td>✓</td><td>✓</td></tr>
-                        <tr><td>多店铺管理</td><td>1个店铺</td><td class="highlight-col">1个店铺</td><td>1个店铺</td><td>10个店铺</td></tr>
-                        <tr><td>API接口</td><td>✗</td><td class="highlight-col">✗</td><td>✗</td><td>✓</td></tr>
-                        <tr><td>专属客服</td><td>✗</td><td class="highlight-col">✗</td><td>✗</td><td>✓</td></tr>
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="pricing-actions">
-                <button class="btn btn-primary btn-lg" onclick="showPage('register')">立即购买/升级</button>
-                <button class="btn btn-outline btn-lg" onclick="showPage('landing')">返回首页</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ==================== 帮助中心页面 ==================== -->
-<div id="page-help" class="page">
-    <nav class="front-nav">
-        <div class="nav-inner">
-            <div class="logo" onclick="showPage('landing')">
-                <span class="logo-icon">🛒</span>
-                <span class="logo-text">电商AI运营助手</span>
-            </div>
-            <div class="nav-btns">
-                <button class="btn btn-outline btn-sm" onclick="showPage('login')">登录</button>
-                <button class="btn btn-primary btn-sm" onclick="showPage('register')">免费注册</button>
-            </div>
-        </div>
-    </nav>
-    <div class="help-page">
-        <div class="container">
-            <h1 class="page-main-title">帮助中心</h1>
-            <p class="page-main-desc">新手使用教程、功能答疑、付费问题、权限说明、常见报错</p>
-            
-            <div class="help-categories">
-                <div class="help-category">
-                    <h3>📚 新手使用教程</h3>
-                    <div class="help-item">
-                        <h4>如何注册账号并开始使用？</h4>
-                        <p>点击右上角「免费注册」，输入手机号和密码即可完成注册，注册后自动登录进入用户后台。</p>
-                    </div>
-                    <div class="help-item">
-                        <h4>如何使用AI生成商品标题？</h4>
-                        <p>进入后台→AI内容工具箱→标题生成，填写商品名称、核心卖点等信息，点击「开始AI生成标题」即可生成10组优质标题。</p>
-                    </div>
-                    <div class="help-item">
-                        <h4>如何绑定店铺并同步数据？</h4>
-                        <p>进入后台→店铺绑定管理，选择电商平台，输入店铺名称和授权码，点击绑定即可自动同步店铺数据。</p>
-                    </div>
-                </div>
-                
-                <div class="help-category">
-                    <h3>❓ 功能答疑</h3>
-                    <div class="help-item">
-                        <h4>AI生成的内容可以直接用吗？</h4>
-                        <p>可以！所有AI提示词均为电商专属定制，生成内容完全适配电商运营场景，可直接复制使用，也可根据需要微调。</p>
-                    </div>
-                    <div class="help-item">
-                        <h4>竞品数据分析支持哪些平台？</h4>
-                        <p>目前支持淘宝、拼多多、抖音电商、小红书四大主流电商平台的商品链接分析。</p>
-                    </div>
-                    <div class="help-item">
-                        <h4>报表支持哪些导出格式？</h4>
-                        <p>支持导出Word、PDF、Excel三种格式，满足不同使用场景需求。</p>
-                    </div>
-                </div>
-                
-                <div class="help-category">
-                    <h3>💰 付费问题</h3>
-                    <div class="help-item">
-                        <h4>免费版和付费版有什么区别？</h4>
-                        <p>免费版每日AI生成10次、竞品分析3次，不支持数据导出、运营诊断、月报生成；付费版全部功能解锁，不限使用次数。</p>
-                    </div>
-                    <div class="help-item">
-                        <h4>如何升级会员？</h4>
-                        <p>进入后台→会员充值升级，选择对应套餐，支持微信/支付宝在线支付，支付后实时生效。</p>
-                    </div>
-                    <div class="help-item">
-                        <h4>支持退款吗？</h4>
-                        <p>开通7天内未使用付费功能可申请全额退款，超过7天或已使用付费功能不支持退款，请谨慎选择。</p>
-                    </div>
-                </div>
-                
-                <div class="help-category">
-                    <h3>⚠️ 常见报错</h3>
-                    <div class="help-item">
-                        <h4>提示「今日使用次数已用完」怎么办？</h4>
-                        <p>免费版每日有使用次数限制，次日自动重置；如需立即使用，请升级会员解锁不限次数。</p>
-                    </div>
-                    <div class="help-item">
-                        <h4>提示「该功能为付费功能」怎么办？</h4>
-                        <p>部分高级功能（如AI运营诊断、月报生成）仅对付费会员开放，请升级对应套餐后使用。</p>
-                    </div>
-                    <div class="help-item">
-                        <h4>AI生成失败怎么办？</h4>
-                        <p>请检查网络连接，稍后重试；如持续失败，请联系客服处理。演示模式下均返回示例内容。</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="help-contact">
-                <h3>📞 人工客服入口</h3>
-                <p>如以上内容未能解决您的问题，请联系人工客服：客服微信：ecommerce-ai | 工作时间：9:00-21:00</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ==================== 用户后台 ==================== -->
-<div id="page-dashboard" class="page admin-page">
-    <!-- 后台顶部栏 -->
-    <header class="admin-topbar">
-        <div class="topbar-left">
-            <button class="btn btn-ghost btn-sm" onclick="showPage('landing')">← 返回首页</button>
-            <span class="user-plan-badge" id="user-plan-badge">免费版</span>
-            <span class="usage-display">剩余AI次数：<span id="remaining-count">10</span></span>
-        </div>
-        <div class="topbar-right">
-            <button class="topbar-icon-btn" onclick="switchAdminPage('shop-bind')" title="店铺绑定">🏪</button>
-            <button class="topbar-icon-btn" title="消息通知">🔔</button>
-            <div class="user-dropdown">
-                <span class="user-name-display" id="user-name-display">用户</span>
-                <div class="dropdown-menu">
-                    <a href="javascript:void(0)" onclick="switchAdminPage('profile')">个人中心</a>
-                    <a href="javascript:void(0)" onclick="switchAdminPage('pricing-admin')">会员升级</a>
-                    <a href="javascript:void(0)" onclick="handleLogout()">退出登录</a>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <div class="admin-layout">
-        <!-- 左侧侧边栏 -->
-        <aside class="admin-sidebar">
-            <div class="sidebar-logo">
-                <span class="logo-icon">🛒</span>
-                <span class="logo-text">电商AI助手</span>
-            </div>
-            <nav class="sidebar-menu">
-                <a href="javascript:void(0)" class="menu-item active" data-page="overview" onclick="switchAdminPage('overview')">
-                    <span class="menu-icon">📊</span>
-                    <span class="menu-text">数据总看板</span>
-                </a>
-                <div class="menu-group">
-                    <div class="menu-group-title">AI内容工具箱</div>
-                    <a href="javascript:void(0)" class="menu-item sub" data-page="title" onclick="switchAdminPage('title')">
-                        <span class="menu-icon">🏷️</span>
-                        <span class="menu-text">标题生成</span>
-                    </a>
-                    <a href="javascript:void(0)" class="menu-item sub" data-page="detail" onclick="switchAdminPage('detail')">
-                        <span class="menu-icon">📄</span>
-                        <span class="menu-text">详情页生成</span>
-                    </a>
-                    <a href="javascript:void(0)" class="menu-item sub" data-page="service" onclick="switchAdminPage('service')">
-                        <span class="menu-icon">💬</span>
-                        <span class="menu-text">客服话术生成</span>
-                    </a>
-                </div>
-                <div class="menu-group">
-                    <div class="menu-group-title">数据分析</div>
-                    <a href="javascript:void(0)" class="menu-item sub" data-page="competitor" onclick="switchAdminPage('competitor')">
-                        <span class="menu-icon">🔍</span>
-                        <span class="menu-text">竞品数据分析</span>
-                        <span class="menu-badge">PRO</span>
-                    </a>
-                    <a href="javascript:void(0)" class="menu-item sub" data-page="shop-data" onclick="switchAdminPage('shop-data')">
-                        <span class="menu-icon">📈</span>
-                        <span class="menu-text">店铺数据监控</span>
-                    </a>
-                </div>
-                <a href="javascript:void(0)" class="menu-item" data-page="diagnosis" onclick="switchAdminPage('diagnosis')">
-                    <span class="menu-icon">💡</span>
-                    <span class="menu-text">AI智能运营诊断</span>
-                    <span class="menu-badge">PRO</span>
-                </a>
-                <a href="javascript:void(0)" class="menu-item" data-page="report" onclick="switchAdminPage('report')">
-                    <span class="menu-icon">📋</span>
-                    <span class="menu-text">自动报表生成</span>
-                </a>
-                <a href="javascript:void(0)" class="menu-item" data-page="shop-bind" onclick="switchAdminPage('shop-bind')">
-                    <span class="menu-icon">🏪</span>
-                    <span class="menu-text">店铺绑定管理</span>
-                </a>
-                <a href="javascript:void(0)" class="menu-item" data-page="pricing-admin" onclick="switchAdminPage('pricing-admin')">
-                    <span class="menu-icon">💎</span>
-                    <span class="menu-text">会员充值升级</span>
-                </a>
-                <a href="javascript:void(0)" class="menu-item" data-page="profile" onclick="switchAdminPage('profile')">
-                    <span class="menu-icon">⚙️</span>
-                    <span class="menu-text">个人中心设置</span>
-                </a>
-            </nav>
-        </aside>
-
-        <!-- 右侧主内容区 -->
-        <main class="admin-main">
-            <!-- 数据总看板 -->
-            <div id="admin-overview" class="admin-content active">
-                <h2 class="admin-page-title">数据总看板</h2>
-                
-                <!-- 顶部数据概览卡片 -->
-                <div class="overview-cards">
-                    <div class="overview-card">
-                        <div class="overview-card-icon">📦</div>
-                        <div class="overview-card-info">
-                            <div class="overview-card-label">今日订单数</div>
-                            <div class="overview-card-value" id="today-orders">--</div>
-                            <div class="overview-card-change up" id="order-change">--</div>
-                        </div>
-                    </div>
-                    <div class="overview-card">
-                        <div class="overview-card-icon">💰</div>
-                        <div class="overview-card-info">
-                            <div class="overview-card-label">今日销售额</div>
-                            <div class="overview-card-value" id="today-sales">--</div>
-                            <div class="overview-card-change up" id="sales-change">--</div>
-                        </div>
-                    </div>
-                    <div class="overview-card">
-                        <div class="overview-card-icon">👥</div>
-                        <div class="overview-card-info">
-                            <div class="overview-card-label">店铺访客数</div>
-                            <div class="overview-card-value" id="today-visitors">--</div>
-                            <div class="overview-card-change">实时数据</div>
-                        </div>
-                    </div>
-                    <div class="overview-card">
-                        <div class="overview-card-icon">🤖</div>
-                        <div class="overview-card-info">
-                            <div class="overview-card-label">今日AI使用次数</div>
-                            <div class="overview-card-value"><span id="ai-used">0</span>/<span id="ai-limit">10</span></div>
-                            <div class="overview-card-change">剩余次数提醒</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 数据趋势图表 -->
-                <div class="admin-card">
-                    <div class="card-header">
-                        <h3>近7天数据趋势</h3>
-                        <div class="card-actions">
-                            <button class="btn btn-ghost btn-sm active">7天</button>
-                            <button class="btn btn-ghost btn-sm">30天</button>
-                            <button class="btn btn-outline btn-sm">导出图片</button>
-                        </div>
-                    </div>
-                    <div class="chart-placeholder" id="trend-chart">
-                        <div class="chart-placeholder-text">📊 数据趋势图表（演示模式显示模拟数据）</div>
-                    </div>
-                </div>
-
-                <!-- 智能提醒 + 快捷操作 -->
-                <div class="dashboard-row">
-                    <div class="admin-card flex-1">
-                        <div class="card-header">
-                            <h3>智能提醒</h3>
-                        </div>
-                        <div class="alert-list" id="alert-list">
-                            <div class="alert-item warning">
-                                <span class="alert-icon">⚠️</span>
-                                <span class="alert-text">商品C流量连续3天下滑，建议优化标题主图</span>
-                                <span class="alert-time">2小时前</span>
-                            </div>
-                            <div class="alert-item danger">
-                                <span class="alert-icon">🔴</span>
-                                <span class="alert-text">转化率低于行业均值2.5%，建议优化详情页</span>
-                                <span class="alert-time">5小时前</span>
-                            </div>
-                            <div class="alert-item info">
-                                <span class="alert-icon">ℹ️</span>
-                                <span class="alert-text">竞品A降价10%，建议关注价格动态</span>
-                                <span class="alert-time">1天前</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="admin-card flex-1">
-                        <div class="card-header">
-                            <h3>快捷操作</h3>
-                        </div>
-                        <div class="quick-actions-grid">
-                            <button class="quick-action-btn" onclick="switchAdminPage('title')">
-                                <span class="qa-icon">🏷️</span>
-                                <span>一键生成商品标题</span>
-                            </button>
-                            <button class="quick-action-btn" onclick="switchAdminPage('competitor')">
-                                <span class="qa-icon">🔍</span>
-                                <span>查看竞品数据</span>
-                            </button>
-                            <button class="quick-action-btn" onclick="switchAdminPage('report')">
-                                <span class="qa-icon">📋</span>
-                                <span>生成今日运营简报</span>
-                            </button>
-                            <button class="quick-action-btn" onclick="switchAdminPage('diagnosis')">
-                                <span class="qa-icon">💡</span>
-                                <span>查看优化建议</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 标题生成 -->
-            <div id="admin-title" class="admin-content">
-                <h2 class="admin-page-title">AI商品标题生成</h2>
-                <div class="tool-layout">
-                    <div class="tool-form">
-                        <div class="form-group">
-                            <label class="form-label">商品名称 *</label>
-                            <input type="text" id="title-product" class="form-input" placeholder="请输入核心产品名称，如：纯棉短袖T恤">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">核心卖点</label>
-                            <textarea id="title-features" class="form-textarea" rows="3" placeholder="如：纯棉、透气、宽松、百搭、夏季新款"></textarea>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">电商平台</label>
-                                <select id="title-platform" class="form-select">
-                                    <option>淘宝</option>
-                                    <option>拼多多</option>
-                                    <option>抖音电商</option>
-                                    <option>小红书</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">标题风格</label>
-                                <select id="title-style" class="form-select">
-                                    <option>引流爆款</option>
-                                    <option>合规简约</option>
-                                    <option>高权重搜索</option>
-                                    <option>网红种草</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">标题字数</label>
-                                <select id="title-wordcount" class="form-select">
-                                    <option>30字内</option>
-                                    <option>60字内</option>
-                                    <option>平台标准字数</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">适用人群</label>
-                                <select id="title-audience" class="form-select">
-                                    <option>通用</option>
-                                    <option>学生</option>
-                                    <option>宝妈</option>
-                                    <option>上班族</option>
-                                </select>
-                            </div>
-                        </div>
-                        <button class="btn btn-primary btn-block btn-lg" onclick="generateTitle()">
-                            <span>✨</span> 开始AI生成标题
-                        </button>
-                    </div>
-                    <div class="tool-result">
-                        <div class="result-header">
-                            <h3>生成结果（10组）</h3>
-                            <div class="result-actions">
-                                <button class="btn btn-outline btn-sm" onclick="copyResult('title-result')">批量复制</button>
-                                <button class="btn btn-outline btn-sm">导出TXT</button>
-                            </div>
-                        </div>
-                        <div id="title-result" class="result-content">
-                            <div class="result-placeholder">
-                                <div class="placeholder-icon">🏷️</div>
-                                <p>填写左侧信息，点击生成按钮</p>
-                                <p class="placeholder-hint">AI将为你生成10组高点击率标题</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 详情页生成 -->
-            <div id="admin-detail" class="admin-content">
-                <h2 class="admin-page-title">AI详情页文案生成</h2>
-                <div class="tool-layout">
-                    <div class="tool-form">
-                        <div class="form-group">
-                            <label class="form-label">商品名称 *</label>
-                            <input type="text" id="detail-product" class="form-input" placeholder="请输入商品名称">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">核心功能/卖点 *</label>
-                            <textarea id="detail-features" class="form-textarea" rows="3" placeholder="请输入核心卖点，多行输入"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">产品参数</label>
-                            <textarea id="detail-params" class="form-textarea" rows="2" placeholder="尺寸、材质、规格、颜色，选填"></textarea>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">适配平台</label>
-                                <select id="detail-platform" class="form-select">
-                                    <option>淘宝</option>
-                                    <option>拼多多</option>
-                                    <option>抖音</option>
-                                    <option>小红书</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">文案风格</label>
-                                <select id="detail-style" class="form-select">
-                                    <option>专业走心</option>
-                                    <option>简洁直白</option>
-                                    <option>网红种草</option>
-                                    <option>促销转化</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">包含内容</label>
-                            <div class="checkbox-group">
-                                <label class="checkbox-label"><input type="checkbox" checked> 售后保障</label>
-                                <label class="checkbox-label"><input type="checkbox" checked> 发货说明</label>
-                                <label class="checkbox-label"><input type="checkbox" checked> 温馨提示</label>
-                            </div>
-                        </div>
-                        <button class="btn btn-primary btn-block btn-lg" onclick="generateDetail()">
-                            <span>✨</span> 一键生成详情页全套文案
-                        </button>
-                    </div>
-                    <div class="tool-result">
-                        <div class="result-header">
-                            <h3>生成结果</h3>
-                            <div class="result-actions">
-                                <button class="btn btn-outline btn-sm" onclick="copyResult('detail-result')">一键复制</button>
-                                <button class="btn btn-outline btn-sm">导出文档</button>
-                            </div>
-                        </div>
-                        <div id="detail-result" class="result-content">
-                            <div class="result-placeholder">
-                                <div class="placeholder-icon">📄</div>
-                                <p>填写左侧信息，点击生成按钮</p>
-                                <p class="placeholder-hint">AI将为你生成完整详情页文案</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 客服话术生成 -->
-            <div id="admin-service" class="admin-content">
-                <h2 class="admin-page-title">智能客服话术生成</h2>
-                <div class="tool-layout">
-                    <div class="tool-form">
-                        <div class="form-group">
-                            <label class="form-label">话术场景</label>
-                            <select id="service-scenario" class="form-select">
-                                <option>售前咨询</option>
-                                <option>砍价议价</option>
-                                <option>发货咨询</option>
-                                <option>售后退换货</option>
-                                <option>差评应对</option>
-                                <option>催单</option>
-                                <option>催好评</option>
-                                <option>投诉处理</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">具体问题场景</label>
-                            <textarea id="service-question" class="form-textarea" rows="3" placeholder="例：客户问衣服会不会起球"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">话术风格</label>
-                            <select id="service-style" class="form-select">
-                                <option>温柔亲和</option>
-                                <option>专业正式</option>
-                                <option>简洁高效</option>
-                                <option>高情商挽留</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-primary btn-block btn-lg" onclick="generateService()">
-                            <span>✨</span> 生成专属客服话术
-                        </button>
-                    </div>
-                    <div class="tool-result">
-                        <div class="result-header">
-                            <h3>生成结果（5套话术）</h3>
-                            <div class="result-actions">
-                                <button class="btn btn-outline btn-sm" onclick="copyResult('service-result')">批量复制</button>
-                                <button class="btn btn-outline btn-sm">批量保存</button>
-                            </div>
-                        </div>
-                        <div id="service-result" class="result-content">
-                            <div class="result-placeholder">
-                                <div class="placeholder-icon">💬</div>
-                                <p>填写左侧信息，点击生成按钮</p>
-                                <p class="placeholder-hint">AI将为你生成5套不同风格话术</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 竞品数据分析 -->
-            <div id="admin-competitor" class="admin-content">
-                <h2 class="admin-page-title">竞品数据分析 <span class="pro-tag">PRO</span></h2>
-                <div class="competitor-input-card">
-                    <div class="form-group">
-                        <label class="form-label">竞品商品链接（支持淘宝/拼多多/抖音/小红书）</label>
-                        <div class="input-with-btn">
-                            <input type="text" id="competitor-url" class="form-input" placeholder="请粘贴竞品商品链接">
-                            <button class="btn btn-primary" onclick="analyzeCompetitor()">开始智能爬取分析</button>
-                        </div>
-                    </div>
-                    <p class="form-tip">免费版每日3次基础查询，付费版无限制爬取分析</p>
-                </div>
-                
-                <div id="competitor-result" class="competitor-result-hidden">
-                    <!-- 竞品数据将通过JS动态渲染 -->
-                </div>
-            </div>
-
-            <!-- 店铺数据监控 -->
-            <div id="admin-shop-data" class="admin-content">
-                <h2 class="admin-page-title">店铺数据监控</h2>
-                <div class="shop-data-header">
-                    <div class="shop-selector">
-                        <label>当前店铺：</label>
-                        <select class="form-select form-select-sm">
-                            <option>我的淘宝店</option>
-                        </select>
-                    </div>
-                    <div class="data-actions">
-                        <button class="btn btn-outline btn-sm" onclick="loadShopData()">🔄 实时刷新</button>
-                        <button class="btn btn-outline btn-sm">📥 导出数据</button>
-                        <button class="btn btn-outline btn-sm">📈 查看30天趋势</button>
-                    </div>
-                </div>
-                
-                <div id="shop-data-content">
-                    <div class="result-placeholder">
-                        <div class="placeholder-icon">📊</div>
-                        <p>点击「实时刷新」加载店铺数据</p>
-                        <p class="placeholder-hint">绑定店铺后自动同步官方数据，可视化展示</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- AI智能运营诊断 -->
-            <div id="admin-diagnosis" class="admin-content">
-                <h2 class="admin-page-title">AI智能运营诊断 <span class="pro-tag">PRO</span></h2>
-                <div class="diagnosis-intro">
-                    <div class="diagnosis-icon">💡</div>
-                    <div class="diagnosis-info">
-                        <h3>全自动AI运营诊断</h3>
-                        <p>自动读取店铺监控数据+竞品数据，AI自动分析，输出可直接执行的优化方案和7天执行计划</p>
-                    </div>
-                    <button class="btn btn-primary btn-lg" onclick="runDiagnosis()">🚀 开始AI智能诊断</button>
-                </div>
-                <div id="diagnosis-result" class="diagnosis-result-hidden">
-                    <!-- 诊断结果将通过JS动态渲染 -->
-                </div>
-            </div>
-
-            <!-- 自动报表生成 -->
-            <div id="admin-report" class="admin-content">
-                <h2 class="admin-page-title">自动报表生成</h2>
-                <div class="report-form-card">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">报表类型</label>
-                            <select id="report-type" class="form-select">
-                                <option value="weekly">运营周报</option>
-                                <option value="monthly">运营月报 <span class="pro-tag">PRO</span></option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">统计时间</label>
-                            <input type="text" class="form-input" value="本周（自动默认）" readonly>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">报表内容（勾选）</label>
-                        <div class="checkbox-group">
-                            <label class="checkbox-label"><input type="checkbox" checked> 数据汇总</label>
-                            <label class="checkbox-label"><input type="checkbox" checked> 问题分析</label>
-                            <label class="checkbox-label"><input type="checkbox" checked> 竞品对比</label>
-                            <label class="checkbox-label"><input type="checkbox" checked> 优化总结</label>
-                            <label class="checkbox-label"><input type="checkbox" checked> 下周/下月计划</label>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary btn-lg" onclick="generateReport()">
-                        <span>📋</span> 一键生成专业运营报表
+                <h1 class="hero-title">
+                    一站式<span class="gradient-text">电商AI运营助手</span><br>
+                    解放卖家双手，提升运营效率
+                </h1>
+                <p class="hero-subtitle">
+                    从商品标题生成到竞品数据分析，从客服话术到运营诊断报告，AI全方位赋能你的电商店铺，让运营更简单高效
+                </p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary btn-lg" onclick="showPage('register')">
+                        立即免费试用 →
+                    </button>
+                    <button class="btn btn-outline btn-lg" onclick="scrollToFeatures()">
+                        查看功能详情
                     </button>
                 </div>
-                <div id="report-result" class="report-result-hidden">
-                    <!-- 报表结果将通过JS动态渲染 -->
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">
+                            <span class="up">↑</span> +35%
+                        </div>
+                        <div class="hero-stat-label">平均销量提升</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">
+                            🤖 10万+
+                        </div>
+                        <div class="hero-stat-label">AI内容生成中</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">
+                            <span class="up">↑</span> +28%
+                        </div>
+                        <div class="hero-stat-label">转化率平均提升</div>
+                    </div>
                 </div>
             </div>
+        </section>
 
-            <!-- 店铺绑定管理 -->
-            <div id="admin-shop-bind" class="admin-content">
-                <h2 class="admin-page-title">店铺绑定管理</h2>
-                <div class="bind-form-card">
-                    <h3>绑定新店铺</h3>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">电商平台</label>
-                            <select id="bind-platform" class="form-select">
-                                <option>淘宝</option>
-                                <option>拼多多</option>
-                                <option>抖音电商</option>
-                                <option>小红书</option>
-                            </select>
+        <!-- 功能介绍区 -->
+        <section class="features-section" id="features-section">
+            <div class="section-container">
+                <div class="section-header">
+                    <h2 class="section-title">六大核心功能，全覆盖电商运营需求</h2>
+                    <p class="section-subtitle">从内容生成到数据分析，AI全方位赋能你的电商店铺</p>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card" onclick="goToFunction('title')">
+                        <div class="feature-icon blue">📝</div>
+                        <h3 class="feature-title">AI商品标题生成</h3>
+                        <p class="feature-desc">基于商品属性和平台算法，一键生成高点击率、高搜索权重的爆款标题，支持多平台多风格</p>
+                        <span class="feature-link">了解更多 →</span>
+                    </div>
+                    <div class="feature-card" onclick="goToFunction('detail')">
+                        <div class="feature-icon purple">📄</div>
+                        <h3 class="feature-title">详情页文案生成</h3>
+                        <p class="feature-desc">专业的详情页文案结构，从卖点提炼到场景描述，AI生成高转化率的商品详情页内容</p>
+                        <span class="feature-link">了解更多 →</span>
+                    </div>
+                    <div class="feature-card" onclick="goToFunction('service')">
+                        <div class="feature-icon pink">💬</div>
+                        <h3 class="feature-title">客服话术生成</h3>
+                        <p class="feature-desc">覆盖售前咨询、售中跟进、售后处理全场景，5种风格话术一键生成，提升客服转化率</p>
+                        <span class="feature-link">了解更多 →</span>
+                    </div>
+                    <div class="feature-card" onclick="goToFunction('competitor')">
+                        <div class="feature-icon green">🔍</div>
+                        <h3 class="feature-title">竞品智能分析</h3>
+                        <p class="feature-desc">输入竞品链接，AI自动分析价格、销量、评价、促销策略，生成完整竞品分析报告</p>
+                        <span class="feature-link">了解更多 →</span>
+                    </div>
+                    <div class="feature-card" onclick="goToFunction('shop-data')">
+                        <div class="feature-icon cyan">📊</div>
+                        <h3 class="feature-title">店铺数据监控</h3>
+                        <p class="feature-desc">实时监控店铺核心指标，流量来源分析、热销商品排行、异常预警，数据驱动决策</p>
+                        <span class="feature-link">了解更多 →</span>
+                    </div>
+                    <div class="feature-card" onclick="goToFunction('diagnosis')">
+                        <div class="feature-icon orange">💡</div>
+                        <h3 class="feature-title">AI运营诊断</h3>
+                        <p class="feature-desc">AI深度诊断店铺运营问题，从流量、转化、商品、客服多维度分析，给出7天可执行优化计划</p>
+                        <span class="feature-link">了解更多 →</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 价格套餐区 -->
+        <section class="pricing-section" id="pricing-section">
+            <div class="section-container">
+                <div class="section-header">
+                    <h2 class="section-title">透明定价，按需选择</h2>
+                    <p class="section-subtitle">免费版永久可用，付费版解锁全部功能</p>
+                </div>
+                <div class="pricing-toggle">
+                    <span class="pricing-toggle-label active">月付</span>
+                    <div class="pricing-toggle-switch" onclick="togglePricing()"></div>
+                    <span class="pricing-toggle-label">年付</span>
+                    <span class="pricing-save-tag">省17%</span>
+                </div>
+                <div class="pricing-grid">
+                    <!-- 免费版 -->
+                    <div class="pricing-card">
+                        <div class="pricing-name">免费版</div>
+                        <div class="pricing-price">
+                            <span class="currency">¥</span>
+                            <span class="amount">0</span>
+                            <span class="period">/永久</span>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">店铺名称</label>
-                            <input type="text" id="bind-shop-name" class="form-input" placeholder="请输入店铺名称">
+                        <p class="pricing-desc">适合新手卖家体验</p>
+                        <div class="pricing-divider"></div>
+                        <div class="pricing-features">
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>AI标题生成 10次/天</span>
+                            </div>
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>详情页生成 10次/天</span>
+                            </div>
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>客服话术生成 10次/天</span>
+                            </div>
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>竞品分析 3次/天</span>
+                            </div>
+                            <div class="pricing-feature excluded">
+                                <span class="pricing-feature-icon cross">✗</span>
+                                <span>店铺数据监控</span>
+                            </div>
+                            <div class="pricing-feature excluded">
+                                <span class="pricing-feature-icon cross">✗</span>
+                                <span>AI运营诊断</span>
+                            </div>
+                            <div class="pricing-feature excluded">
+                                <span class="pricing-feature-icon cross">✗</span>
+                                <span>报表导出</span>
+                            </div>
                         </div>
+                        <button class="btn btn-outline btn-block" onclick="showPage('register')">免费开始</button>
+                    </div>
+
+                    <!-- 月付版（推荐） -->
+                    <div class="pricing-card recommended">
+                        <div class="pricing-badge">最受欢迎</div>
+                        <div class="pricing-name">月付版</div>
+                        <div class="pricing-price">
+                            <span class="currency">¥</span>
+                            <span class="amount" id="monthly-price">39</span>
+                            <span class="period">/月</span>
+                        </div>
+                        <p class="pricing-desc">适合中小卖家日常运营</p>
+                        <div class="pricing-divider"></div>
+                        <div class="pricing-features">
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>AI生成 无限次</span>
+                            </div>
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>竞品分析 无限次</span>
+                            </div>
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>店铺数据监控</span>
+                            </div>
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>AI运营诊断</span>
+                            </div>
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>周报生成与导出</span>
+                            </div>
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>绑定1个店铺</span>
+                            </div>
+                            <div class="pricing-feature excluded">
+                                <span class="pricing-feature-icon cross">✗</span>
+                                <span>月报生成</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-block" onclick="showPage('register')">立即开通</button>
+                    </div>
+
+                    <!-- 年付版 -->
+                    <div class="pricing-card">
+                        <div class="pricing-name">年付版</div>
+                        <div class="pricing-price">
+                            <span class="currency">¥</span>
+                            <span class="amount" id="yearly-price">399</span>
+                            <span class="period">/年</span>
+                        </div>
+                        <p class="pricing-desc">适合长期运营，更划算</p>
+                        <div class="pricing-divider"></div>
+                        <div class="pricing-features">
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>月付版全部功能</span>
+                            </div>
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>月报生成与导出</span>
+                            </div>
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>优先客服支持</span>
+                            </div>
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>新功能优先体验</span>
+                            </div>
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>节省¥169/年</span>
+                            </div>
+                            <div class="pricing-feature excluded">
+                                <span class="pricing-feature-icon cross">✗</span>
+                                <span>多店铺管理</span>
+                            </div>
+                            <div class="pricing-feature excluded">
+                                <span class="pricing-feature-icon cross">✗</span>
+                                <span>API接口</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline btn-block" onclick="showPage('register')">立即开通</button>
+                    </div>
+
+                    <!-- 企业版 -->
+                    <div class="pricing-card enterprise">
+                        <div class="pricing-name">企业版</div>
+                        <div class="pricing-price">
+                            <span class="currency">¥</span>
+                            <span class="amount">199</span>
+                            <span class="period">/月</span>
+                        </div>
+                        <p class="pricing-desc">适合团队和企业用户</p>
+                        <div class="pricing-divider"></div>
+                        <div class="pricing-features">
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>年付版全部功能</span>
+                            </div>
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>绑定10个店铺</span>
+                            </div>
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>API接口调用</span>
+                            </div>
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>团队协作功能</span>
+                            </div>
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>专属客户经理</span>
+                            </div>
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>定制化需求</span>
+                            </div>
+                            <div class="pricing-feature included">
+                                <span class="pricing-feature-icon check">✓</span>
+                                <span>7x24小时支持</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-block" style="background:#fff;color:var(--primary)" onclick="showPage('register')">联系客服</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA行动号召区 -->
+        <section class="cta-section">
+            <div class="cta-card">
+                <div class="cta-content">
+                    <h2 class="cta-title">准备好提升你的电商运营效率了吗？</h2>
+                    <p class="cta-subtitle">立即注册，免费体验全部AI功能</p>
+                    <div class="cta-buttons">
+                        <button class="btn btn-lg cta-btn-white" onclick="showPage('register')">
+                            免费开始使用
+                        </button>
+                        <button class="btn btn-lg cta-btn-outline-white" onclick="showPage('help')">
+                            预约演示
+                        </button>
+                    </div>
+                    <p class="cta-note">无需信用卡 · 永久免费版可用</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 页脚 -->
+        <footer class="footer">
+            <div class="footer-container">
+                <div class="footer-grid">
+                    <div class="footer-brand">
+                        <div class="footer-brand-logo">
+                            <div class="nav-logo-icon">🛒</div>
+                            <span class="nav-logo-text">电商AI运营助手</span>
+                        </div>
+                        <p class="footer-brand-desc">
+                            一站式AI驱动的电商运营工具，帮助卖家提升运营效率，降低运营成本，实现销量增长
+                        </p>
+                        <div class="footer-social">
+                            <div class="footer-social-icon">💬</div>
+                            <div class="footer-social-icon">📱</div>
+                            <div class="footer-social-icon">📧</div>
+                        </div>
+                    </div>
+                    <div class="footer-column">
+                        <h4 class="footer-column-title">产品</h4>
+                        <div class="footer-links">
+                            <span class="footer-link" onclick="scrollToFeatures()">功能介绍</span>
+                            <span class="footer-link" onclick="showPage('pricing')">价格套餐</span>
+                            <span class="footer-link">更新日志</span>
+                            <span class="footer-link">API文档</span>
+                        </div>
+                    </div>
+                    <div class="footer-column">
+                        <h4 class="footer-column-title">支持</h4>
+                        <div class="footer-links">
+                            <span class="footer-link" onclick="showPage('help')">帮助中心</span>
+                            <span class="footer-link">使用教程</span>
+                            <span class="footer-link">联系客服</span>
+                            <span class="footer-link">状态页</span>
+                        </div>
+                    </div>
+                    <div class="footer-column">
+                        <h4 class="footer-column-title">关于</h4>
+                        <div class="footer-links">
+                            <span class="footer-link">关于我们</span>
+                            <span class="footer-link">隐私政策</span>
+                            <span class="footer-link">用户协议</span>
+                            <span class="footer-link">加入我们</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <p class="footer-copyright">© 2026 电商AI运营助手. 保留所有权利.</p>
+                    <div class="footer-bottom-links">
+                        <span class="footer-bottom-link">隐私政策</span>
+                        <span class="footer-bottom-link">用户协议</span>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ==================== 价格套餐页 ==================== -->
+    <div id="page-pricing" class="page">
+        <nav class="landing-nav">
+            <div class="nav-container">
+                <div class="nav-logo" onclick="showPage('landing')">
+                    <div class="nav-logo-icon">🛒</div>
+                    <span class="nav-logo-text">电商AI运营助手</span>
+                </div>
+                <div class="nav-links">
+                    <span class="nav-link" onclick="showPage('landing')">首页</span>
+                    <span class="nav-link" onclick="showPage('landing');scrollToFeatures()">功能介绍</span>
+                    <span class="nav-link active">价格套餐</span>
+                    <span class="nav-link" onclick="showPage('help')">帮助中心</span>
+                </div>
+                <div class="nav-actions">
+                    <button class="btn btn-text" onclick="showPage('login')">登录</button>
+                    <button class="btn btn-primary" onclick="showPage('register')">免费注册</button>
+                </div>
+            </div>
+        </nav>
+        <div style="padding-top:100px">
+            <section class="pricing-section">
+                <div class="section-container">
+                    <div class="section-header">
+                        <h2 class="section-title">选择适合你的套餐</h2>
+                        <p class="section-subtitle">免费版永久可用，随时升级或取消</p>
+                    </div>
+                    <div class="pricing-toggle">
+                        <span class="pricing-toggle-label active">月付</span>
+                        <div class="pricing-toggle-switch" onclick="togglePricing()"></div>
+                        <span class="pricing-toggle-label">年付</span>
+                        <span class="pricing-save-tag">省17%</span>
+                    </div>
+                    <div class="pricing-grid" id="pricing-grid-page">
+                        <!-- 价格卡片与首页相同，JS动态渲染 -->
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- ==================== 帮助中心页 ==================== -->
+    <div id="page-help" class="page">
+        <nav class="landing-nav">
+            <div class="nav-container">
+                <div class="nav-logo" onclick="showPage('landing')">
+                    <div class="nav-logo-icon">🛒</div>
+                    <span class="nav-logo-text">电商AI运营助手</span>
+                </div>
+                <div class="nav-links">
+                    <span class="nav-link" onclick="showPage('landing')">首页</span>
+                    <span class="nav-link" onclick="showPage('landing');scrollToFeatures()">功能介绍</span>
+                    <span class="nav-link" onclick="showPage('pricing')">价格套餐</span>
+                    <span class="nav-link active">帮助中心</span>
+                </div>
+                <div class="nav-actions">
+                    <button class="btn btn-text" onclick="showPage('login')">登录</button>
+                    <button class="btn btn-primary" onclick="showPage('register')">免费注册</button>
+                </div>
+            </div>
+        </nav>
+        <div style="padding:120px 0 80px">
+            <div class="section-container">
+                <div class="section-header">
+                    <h2 class="section-title">帮助中心</h2>
+                    <p class="section-subtitle">找到你需要的答案和教程</p>
+                </div>
+                <div style="max-width:600px;margin:0 auto 60px">
+                    <div class="form-group">
+                        <input type="text" class="form-input" placeholder="搜索问题或关键词..." style="height:48px;font-size:16px">
+                    </div>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon blue">🚀</div>
+                        <h3 class="feature-title">新手入门</h3>
+                        <p class="feature-desc">快速上手，了解平台基本功能和使用流程</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon purple">⚙️</div>
+                        <h3 class="feature-title">功能使用</h3>
+                        <p class="feature-desc">详细的功能说明和操作指南</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon green">💳</div>
+                        <h3 class="feature-title">账号与支付</h3>
+                        <p class="feature-desc">账号管理、套餐升级、支付问题解答</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon orange">❓</div>
+                        <h3 class="feature-title">常见问题</h3>
+                        <p class="feature-desc">用户最常问的问题和解决方案</p>
+                    </div>
+                </div>
+                <div style="margin-top:60px;text-align:center">
+                    <div class="card" style="padding:40px;max-width:600px;margin:0 auto">
+                        <h3 style="font-size:20px;margin-bottom:12px">没有找到答案？</h3>
+                        <p style="color:var(--text-secondary);margin-bottom:20px">联系我们的客服团队，获取专业帮助</p>
+                        <button class="btn btn-primary">在线客服</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 登录页 ==================== -->
+    <div id="page-login" class="page auth-page">
+        <div class="auth-left">
+            <div class="auth-left-content">
+                <div class="auth-left-logo">
+                    <div class="nav-logo-icon">🛒</div>
+                    <span class="nav-logo-text">电商AI运营助手</span>
+                </div>
+                <h2 class="auth-left-title">欢迎回来</h2>
+                <p class="auth-left-subtitle">登录继续你的电商AI运营之旅</p>
+                <div class="auth-left-features">
+                    <div class="auth-left-feature">
+                        <span class="auth-left-feature-icon">🤖</span>
+                        <span class="auth-left-feature-text">AI智能生成内容</span>
+                    </div>
+                    <div class="auth-left-feature">
+                        <span class="auth-left-feature-icon">📊</span>
+                        <span class="auth-left-feature-text">数据实时监控</span>
+                    </div>
+                    <div class="auth-left-feature">
+                        <span class="auth-left-feature-icon">🏪</span>
+                        <span class="auth-left-feature-text">多平台支持</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="auth-right">
+            <div class="auth-right-content">
+                <div class="auth-back" onclick="showPage('landing')">
+                    ← 返回首页
+                </div>
+                <h2 class="auth-title">用户登录</h2>
+                <p class="auth-subtitle">输入你的账号信息</p>
+                <form id="login-form" class="auth-form active" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="login-phone">手机号</label>
+                        <input type="text" id="login-phone" class="form-input" placeholder="请输入注册手机号" maxlength="11" autocomplete="tel" name="phone">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">店铺授权码</label>
-                        <input type="text" id="bind-auth-code" class="form-input" placeholder="请输入店铺授权码">
+                        <label class="form-label" for="login-password">密码</label>
+                        <input type="password" id="login-password" class="form-input" placeholder="请输入密码" autocomplete="current-password" name="password">
                     </div>
-                    <button class="btn btn-primary" onclick="bindShop()">绑定店铺</button>
-                    <p class="form-tip">企业版支持批量绑定10个店铺，统一后台管理；免费版/月付/年付版支持绑定1个店铺</p>
-                </div>
-                
-                <div class="bound-shops-card">
-                    <h3>已绑定店铺</h3>
-                    <div id="bound-shops-list">
-                        <div class="empty-state">暂无绑定店铺，请先绑定店铺</div>
+                    <div class="auth-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="remember-me">
+                            <span>记住登录状态</span>
+                        </label>
+                        <span class="auth-forgot">忘记密码？</span>
                     </div>
-                </div>
+                    <button type="submit" class="btn btn-primary btn-block btn-lg">立即登录</button>
+                    <p class="auth-switch">没有账号？<a onclick="showPage('register')">立即注册</a></p>
+                </form>
             </div>
-
-            <!-- 会员充值升级 -->
-            <div id="admin-pricing-admin" class="admin-content">
-                <h2 class="admin-page-title">会员充值升级</h2>
-                <div class="pricing-grid-admin">
-                    <div class="price-card">
-                        <div class="price-name">免费版</div>
-                        <div class="price-amount">¥0<span>/永久</span></div>
-                        <ul class="price-features">
-                            <li>✓ AI生成每日10次</li>
-                            <li>✓ 竞品分析每日3次</li>
-                            <li>✗ 数据导出</li>
-                            <li>✗ AI运营诊断</li>
-                            <li>✗ 月报生成</li>
-                        </ul>
-                        <button class="btn btn-outline btn-block disabled" disabled>当前版本</button>
-                    </div>
-                    <div class="price-card price-card-hot">
-                        <div class="hot-tag">推荐</div>
-                        <div class="price-name">月付版</div>
-                        <div class="price-amount">¥39<span>/月</span></div>
-                        <ul class="price-features">
-                            <li>✓ AI生成不限次数</li>
-                            <li>✓ 竞品分析不限次数</li>
-                            <li>✓ 数据导出</li>
-                            <li>✓ AI运营诊断</li>
-                            <li>✓ 月报生成</li>
-                        </ul>
-                        <button class="btn btn-primary btn-block" onclick="upgradePlan('monthly')">立即升级</button>
-                    </div>
-                    <div class="price-card">
-                        <div class="price-name">年付版</div>
-                        <div class="price-amount">¥399<span>/年</span></div>
-                        <ul class="price-features">
-                            <li>✓ 全部月付功能</li>
-                            <li>✓ 相当于33元/月</li>
-                            <li>✓ 省169元/年</li>
-                            <li>✓ 优先客服响应</li>
-                            <li>✓ 新功能优先体验</li>
-                        </ul>
-                        <button class="btn btn-outline btn-block" onclick="upgradePlan('yearly')">立即升级</button>
-                    </div>
-                    <div class="price-card">
-                        <div class="price-name">企业版</div>
-                        <div class="price-amount">¥199<span>/月起</span></div>
-                        <ul class="price-features">
-                            <li>✓ 全部功能无限制</li>
-                            <li>✓ 支持10店绑定</li>
-                            <li>✓ API数据对接</li>
-                            <li>✓ 批量AI生成</li>
-                            <li>✓ 专属客服对接</li>
-                        </ul>
-                        <button class="btn btn-outline btn-block" onclick="upgradePlan('enterprise')">联系客服</button>
-                    </div>
-                </div>
-                <p class="payment-tip">支持微信/支付宝在线支付，支付后实时生效，自动刷新账号权限和使用次数</p>
-            </div>
-
-            <!-- 个人中心设置 -->
-            <div id="admin-profile" class="admin-content">
-                <h2 class="admin-page-title">个人中心设置</h2>
-                <div class="profile-card">
-                    <div class="profile-avatar-section">
-                        <div class="profile-avatar" id="profile-avatar">U</div>
-                        <div class="profile-info">
-                            <h3 id="profile-username">用户</h3>
-                            <p>账号：<span id="profile-phone">--</span></p>
-                            <p>当前版本：<span id="profile-plan">免费版</span></p>
-                            <p>注册时间：<span id="profile-created">--</span></p>
-                        </div>
-                    </div>
-                    <div class="profile-form">
-                        <div class="form-group">
-                            <label class="form-label">昵称</label>
-                            <input type="text" class="form-input" placeholder="请输入昵称">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">邮箱</label>
-                            <input type="email" class="form-input" placeholder="请输入邮箱">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">修改密码</label>
-                            <input type="password" class="form-input" placeholder="至少8位，含大小写字母和数字" autocomplete="new-password" name="new-password">
-                        </div>
-                        <button class="btn btn-primary">保存设置</button>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-</div>
-
-<!-- ==================== 通用弹窗 ==================== -->
-<div id="modal-overlay" class="modal-overlay">
-    <div class="modal-box">
-        <div class="modal-header">
-            <h3 id="modal-title">提示</h3>
-            <button class="modal-close" onclick="closeModal()">×</button>
-        </div>
-        <div class="modal-body" id="modal-body">
-            <p id="modal-message">提示内容</p>
-        </div>
-        <div class="modal-footer" id="modal-footer">
-            <button class="btn btn-outline" onclick="closeModal()">取消</button>
-            <button class="btn btn-primary" id="modal-confirm-btn" onclick="closeModal()">确定</button>
         </div>
     </div>
-</div>
 
-<!-- 加载遮罩 -->
-<div id="loading-overlay" class="loading-overlay">
-    <div class="loading-spinner"></div>
-    <p class="loading-text" id="loading-text">AI正在生成中...</p>
-</div>
+    <!-- ==================== 注册页 ==================== -->
+    <div id="page-register" class="page auth-page">
+        <div class="auth-left">
+            <div class="auth-left-content">
+                <div class="auth-left-logo">
+                    <div class="nav-logo-icon">🛒</div>
+                    <span class="nav-logo-text">电商AI运营助手</span>
+                </div>
+                <h2 class="auth-left-title">加入我们</h2>
+                <p class="auth-left-subtitle">免费注册，立即体验AI电商运营工具</p>
+                <div class="auth-left-features">
+                    <div class="auth-left-feature">
+                        <span class="auth-left-feature-icon">✅</span>
+                        <span class="auth-left-feature-text">免费版永久可用</span>
+                    </div>
+                    <div class="auth-left-feature">
+                        <span class="auth-left-feature-icon">⚡</span>
+                        <span class="auth-left-feature-text">注册即送10次AI生成</span>
+                    </div>
+                    <div class="auth-left-feature">
+                        <span class="auth-left-feature-icon">🔒</span>
+                        <span class="auth-left-feature-text">数据安全有保障</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="auth-right">
+            <div class="auth-right-content">
+                <div class="auth-back" onclick="showPage('landing')">
+                    ← 返回首页
+                </div>
+                <h2 class="auth-title">免费注册</h2>
+                <p class="auth-subtitle">创建你的账号</p>
+                <form id="register-form" class="auth-form active" onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="register-phone">手机号</label>
+                        <input type="text" id="register-phone" class="form-input" placeholder="请输入手机号" maxlength="11" autocomplete="tel" name="phone">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="register-password">设置密码</label>
+                        <input type="password" id="register-password" class="form-input" placeholder="至少8位，含大小写字母和数字" autocomplete="new-password" name="new-password">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="register-confirm">确认密码</label>
+                        <input type="password" id="register-confirm" class="form-input" placeholder="再次输入密码" autocomplete="new-password" name="confirm-password">
+                    </div>
+                    <div class="form-options" style="margin-bottom:20px">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="agree-terms" required>
+                            <span>已阅读并同意<a>《用户协议》</a><a>《隐私政策》</a></span>
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block btn-lg">立即注册</button>
+                    <p class="auth-switch">已有账号？<a onclick="showPage('login')">立即登录</a></p>
+                </form>
+            </div>
+        </div>
+    </div>
 
-<!-- Toast提示 -->
-<div id="toast" class="toast"></div>
+    <!-- ==================== 后台Dashboard ==================== -->
+    <div id="page-dashboard" class="page">
+        <div class="dashboard-layout">
+            <!-- 侧边栏 -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-logo">
+                    <div class="nav-logo-icon">🛒</div>
+                    <span class="nav-logo-text">电商AI助手</span>
+                </div>
+                <div class="sidebar-user">
+                    <div class="sidebar-avatar" id="sidebar-avatar">用</div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name" id="sidebar-username">用户</div>
+                        <div class="sidebar-user-plan"><span class="tag tag-primary" id="sidebar-plan">免费版</span></div>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <div class="sidebar-nav-group">
+                        <div class="sidebar-nav-group-title">概览</div>
+                        <div class="sidebar-nav-item active" data-page="overview" onclick="switchAdminPage('overview')">
+                            <span class="sidebar-nav-icon">📊</span>
+                            <span class="sidebar-nav-text">数据总看板</span>
+                        </div>
+                    </div>
+                    <div class="sidebar-nav-group">
+                        <div class="sidebar-nav-group-title">AI内容工具</div>
+                        <div class="sidebar-nav-item" data-page="title" onclick="switchAdminPage('title')">
+                            <span class="sidebar-nav-icon">📝</span>
+                            <span class="sidebar-nav-text">标题生成</span>
+                        </div>
+                        <div class="sidebar-nav-item" data-page="detail" onclick="switchAdminPage('detail')">
+                            <span class="sidebar-nav-icon">📄</span>
+                            <span class="sidebar-nav-text">详情页生成</span>
+                        </div>
+                        <div class="sidebar-nav-item" data-page="service" onclick="switchAdminPage('service')">
+                            <span class="sidebar-nav-icon">💬</span>
+                            <span class="sidebar-nav-text">客服话术</span>
+                        </div>
+                    </div>
+                    <div class="sidebar-nav-group">
+                        <div class="sidebar-nav-group-title">数据分析</div>
+                        <div class="sidebar-nav-item" data-page="competitor" onclick="switchAdminPage('competitor')">
+                            <span class="sidebar-nav-icon">🔍</span>
+                            <span class="sidebar-nav-text">竞品分析</span>
+                        </div>
+                        <div class="sidebar-nav-item" data-page="shop-data" onclick="switchAdminPage('shop-data')">
+                            <span class="sidebar-nav-icon">📈</span>
+                            <span class="sidebar-nav-text">店铺数据监控</span>
+                            <span class="sidebar-nav-badge"><span class="tag tag-pro">PRO</span></span>
+                        </div>
+                        <div class="sidebar-nav-item" data-page="diagnosis" onclick="switchAdminPage('diagnosis')">
+                            <span class="sidebar-nav-icon">💡</span>
+                            <span class="sidebar-nav-text">AI运营诊断</span>
+                            <span class="sidebar-nav-badge"><span class="tag tag-pro">PRO</span></span>
+                        </div>
+                        <div class="sidebar-nav-item" data-page="report" onclick="switchAdminPage('report')">
+                            <span class="sidebar-nav-icon">📋</span>
+                            <span class="sidebar-nav-text">报表生成</span>
+                        </div>
+                    </div>
+                    <div class="sidebar-nav-group">
+                        <div class="sidebar-nav-group-title">管理</div>
+                        <div class="sidebar-nav-item" data-page="shop-bind" onclick="switchAdminPage('shop-bind')">
+                            <span class="sidebar-nav-icon">🏪</span>
+                            <span class="sidebar-nav-text">店铺绑定</span>
+                        </div>
+                        <div class="sidebar-nav-item" data-page="pricing-admin" onclick="switchAdminPage('pricing-admin')">
+                            <span class="sidebar-nav-icon">💎</span>
+                            <span class="sidebar-nav-text">会员升级</span>
+                        </div>
+                        <div class="sidebar-nav-item" data-page="profile" onclick="switchAdminPage('profile')">
+                            <span class="sidebar-nav-icon">👤</span>
+                            <span class="sidebar-nav-text">个人中心</span>
+                        </div>
+                    </div>
+                </nav>
+                <div class="sidebar-upgrade">
+                    <div class="sidebar-upgrade-card">
+                        <div class="sidebar-upgrade-title">升级解锁更多</div>
+                        <div class="sidebar-upgrade-desc">无限AI生成 + 数据分析</div>
+                        <div class="sidebar-upgrade-btn" onclick="switchAdminPage('pricing-admin')">立即升级</div>
+                    </div>
+                </div>
+            </aside>
 
-<script src="/static/js/app.js"></script>
+            <!-- 主内容区 -->
+            <main class="main-content" id="main-content">
+                <!-- 顶部栏 -->
+                <header class="topbar">
+                    <div class="topbar-left">
+                        <div class="topbar-breadcrumb">
+                            <span>首页</span>
+                            <span>/</span>
+                            <span class="current" id="breadcrumb-current">数据总看板</span>
+                        </div>
+                    </div>
+                    <div class="topbar-search">
+                        <span class="topbar-search-icon">🔍</span>
+                        <input type="text" placeholder="搜索功能...">
+                    </div>
+                    <div class="topbar-right">
+                        <div class="topbar-icon-btn" title="通知">
+                            🔔
+                            <div class="topbar-notification-dot"></div>
+                        </div>
+                        <div class="topbar-icon-btn" title="帮助" onclick="showPage('help')">
+                            ❓
+                        </div>
+                        <div class="topbar-user" onclick="switchAdminPage('profile')">
+                            <div class="topbar-user-avatar" id="topbar-avatar">用</div>
+                            <span class="topbar-user-name" id="topbar-username">用户</span>
+                        </div>
+                        <div class="topbar-icon-btn" title="退出登录" onclick="handleLogout()">
+                            🚪
+                        </div>
+                    </div>
+                </header>
+
+                <!-- 页面内容 -->
+                <div class="page-content">
+                    <!-- 数据总看板 -->
+                    <div id="admin-overview" class="admin-page">
+                        <div class="page-header">
+                            <div>
+                                <h1 class="page-title">数据总看板</h1>
+                                <p class="page-desc">实时监控店铺核心运营数据</p>
+                            </div>
+                            <div class="page-actions">
+                                <button class="btn btn-outline">今日</button>
+                                <button class="btn btn-primary">刷新数据</button>
+                            </div>
+                        </div>
+
+                        <!-- 快捷操作 -->
+                        <div class="quick-actions">
+                            <div class="quick-action-card" onclick="switchAdminPage('title')">
+                                <div class="quick-action-icon" style="background:var(--primary-light)">📝</div>
+                                <span class="quick-action-text">生成标题</span>
+                            </div>
+                            <div class="quick-action-card" onclick="switchAdminPage('competitor')">
+                                <div class="quick-action-icon" style="background:var(--success-light)">🔍</div>
+                                <span class="quick-action-text">竞品分析</span>
+                            </div>
+                            <div class="quick-action-card" onclick="switchAdminPage('diagnosis')">
+                                <div class="quick-action-icon" style="background:var(--warning-light)">💡</div>
+                                <span class="quick-action-text">AI诊断</span>
+                            </div>
+                            <div class="quick-action-card" onclick="switchAdminPage('report')">
+                                <div class="quick-action-icon" style="background:var(--info-light)">📋</div>
+                                <span class="quick-action-text">生成报表</span>
+                            </div>
+                        </div>
+
+                        <!-- 统计卡片 -->
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon blue">👥</div>
+                                <div class="stat-info">
+                                    <div class="stat-label">今日访客数</div>
+                                    <div class="stat-value" id="stat-visitors">--</div>
+                                    <div class="stat-change up">↑ 12.5% 较昨日</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon green">📦</div>
+                                <div class="stat-info">
+                                    <div class="stat-label">今日订单数</div>
+                                    <div class="stat-value" id="stat-orders">--</div>
+                                    <div class="stat-change up">↑ 8.3% 较昨日</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon purple">💰</div>
+                                <div class="stat-info">
+                                    <div class="stat-label">今日销售额</div>
+                                    <div class="stat-value" id="stat-sales">--</div>
+                                    <div class="stat-change up">↑ 15.2% 较昨日</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon orange">🤖</div>
+                                <div class="stat-info">
+                                    <div class="stat-label">AI使用次数</div>
+                                    <div class="stat-value" id="stat-ai-usage">0/10</div>
+                                    <div class="stat-change">今日剩余次数</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 图表区 -->
+                        <div class="charts-grid">
+                            <div class="chart-card">
+                                <div class="chart-card-header">
+                                    <h3 class="chart-card-title">近7天数据趋势</h3>
+                                    <div style="display:flex;gap:8px">
+                                        <button class="btn btn-sm btn-outline">7天</button>
+                                        <button class="btn btn-sm btn-outline">30天</button>
+                                    </div>
+                                </div>
+                                <div class="chart-card-body">
+                                    <div class="chart-placeholder">
+                                        <div class="chart-placeholder-icon">📊</div>
+                                        <p>数据趋势图表</p>
+                                        <p style="font-size:12px">绑定店铺后显示真实数据</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chart-card">
+                                <div class="chart-card-header">
+                                    <h3 class="chart-card-title">流量来源分析</h3>
+                                </div>
+                                <div class="chart-card-body">
+                                    <div class="chart-placeholder">
+                                        <div class="chart-placeholder-icon">🥧</div>
+                                        <p>流量来源饼图</p>
+                                        <p style="font-size:12px">绑定店铺后显示真实数据</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 下方两列 -->
+                        <div class="two-col-grid">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3>热销商品排行</h3>
+                                    <button class="btn btn-text">查看全部</button>
+                                </div>
+                                <div class="card-body" id="top-products-list">
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon">📦</div>
+                                        <p class="empty-state-text">绑定店铺后显示热销商品</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3>智能提醒</h3>
+                                </div>
+                                <div class="card-body" id="alerts-list">
+                                    <div class="alert-item info">
+                                        <span class="alert-icon">ℹ️</span>
+                                        <span class="alert-text">欢迎使用电商AI运营助手，绑定店铺开始数据分析</span>
+                                        <span class="alert-time">刚刚</span>
+                                    </div>
+                                    <div class="alert-item warning">
+                                        <span class="alert-icon">⚠️</span>
+                                        <span class="alert-text">您的免费版每日AI生成次数有限，升级会员解锁无限次</span>
+                                        <span class="alert-time">1分钟前</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 标题生成 -->
+                    <div id="admin-title" class="admin-page" style="display:none">
+                        <div class="page-header">
+                            <div>
+                                <h1 class="page-title">AI商品标题生成</h1>
+                                <p class="page-desc">基于商品属性，一键生成高点击率爆款标题</p>
+                            </div>
+                        </div>
+                        <div class="ai-generate-layout">
+                            <div class="ai-form-card">
+                                <div class="ai-form-header">
+                                    <h3 class="ai-form-title">参数配置</h3>
+                                    <p class="ai-form-desc">填写商品信息，AI为你生成最优标题</p>
+                                </div>
+                                <div class="ai-form-body">
+                                    <div class="form-group">
+                                        <label class="form-label">商品名称 *</label>
+                                        <input type="text" id="title-product" class="form-input" placeholder="例如：纯棉短袖T恤">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">核心卖点</label>
+                                        <textarea id="title-features" class="form-textarea" rows="3" placeholder="例如：100%纯棉、透气、百搭、不起球"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">电商平台</label>
+                                        <select id="title-platform" class="form-select">
+                                            <option value="淘宝">淘宝/天猫</option>
+                                            <option value="拼多多">拼多多</option>
+                                            <option value="抖音">抖音小店</option>
+                                            <option value="京东">京东</option>
+                                            <option value="小红书">小红书</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">标题风格</label>
+                                        <select id="title-style" class="form-select">
+                                            <option value="引流爆款">引流爆款</option>
+                                            <option value="简约高级">简约高级</option>
+                                            <option value="情感共鸣">情感共鸣</option>
+                                            <option value="专业严谨">专业严谨</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">字数要求</label>
+                                        <select id="title-wordcount" class="form-select">
+                                            <option value="30字内">30字以内</option>
+                                            <option value="20字内">20字以内</option>
+                                            <option value="40字内">40字以内</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="ai-form-footer">
+                                    <button class="btn btn-primary btn-block btn-lg" onclick="generateTitle()">
+                                        ✨ 开始AI生成
+                                    </button>
+                                    <p class="ai-usage-hint">今日剩余 <span id="title-remaining">10</span> 次生成机会</p>
+                                </div>
+                            </div>
+                            <div class="ai-result-card">
+                                <div class="ai-result-header">
+                                    <h3 class="ai-result-title">生成结果</h3>
+                                    <div class="ai-result-actions">
+                                        <button class="btn btn-sm btn-outline" onclick="copyAllResult('title-result')">复制全部</button>
+                                        <button class="btn btn-sm btn-outline" onclick="generateTitle()">重新生成</button>
+                                    </div>
+                                </div>
+                                <div class="ai-result-body" id="title-result">
+                                    <div class="ai-result-empty">
+                                        <div class="ai-result-empty-icon">📝</div>
+                                        <p class="ai-result-empty-text">填写左侧参数，点击生成按钮开始</p>
+                                        <button class="btn btn-outline" onclick="fillTitleExample()">使用示例</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 详情页生成 -->
+                    <div id="admin-detail" class="admin-page" style="display:none">
+                        <div class="page-header">
+                            <div>
+                                <h1 class="page-title">详情页文案生成</h1>
+                                <p class="page-desc">AI生成高转化率的商品详情页文案</p>
+                            </div>
+                        </div>
+                        <div class="ai-generate-layout">
+                            <div class="ai-form-card">
+                                <div class="ai-form-header">
+                                    <h3 class="ai-form-title">参数配置</h3>
+                                    <p class="ai-form-desc">填写商品信息，生成专业详情页文案</p>
+                                </div>
+                                <div class="ai-form-body">
+                                    <div class="form-group">
+                                        <label class="form-label">商品名称 *</label>
+                                        <input type="text" id="detail-product" class="form-input" placeholder="例如：纯棉短袖T恤">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">核心卖点 *</label>
+                                        <textarea id="detail-features" class="form-textarea" rows="3" placeholder="例如：100%纯棉、透气、百搭、不起球"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">产品参数</label>
+                                        <textarea id="detail-params" class="form-textarea" rows="2" placeholder="例如：材质：纯棉；尺码：S/M/L/XL；颜色：黑白灰"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">电商平台</label>
+                                        <select id="detail-platform" class="form-select">
+                                            <option value="淘宝">淘宝/天猫</option>
+                                            <option value="拼多多">拼多多</option>
+                                            <option value="抖音">抖音小店</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">文案风格</label>
+                                        <select id="detail-style" class="form-select">
+                                            <option value="专业走心">专业走心</option>
+                                            <option value="简约高级">简约高级</option>
+                                            <option value="热情活泼">热情活泼</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="ai-form-footer">
+                                    <button class="btn btn-primary btn-block btn-lg" onclick="generateDetail()">
+                                        ✨ 开始AI生成
+                                    </button>
+                                    <p class="ai-usage-hint">今日剩余 <span id="detail-remaining">10</span> 次生成机会</p>
+                                </div>
+                            </div>
+                            <div class="ai-result-card">
+                                <div class="ai-result-header">
+                                    <h3 class="ai-result-title">生成结果</h3>
+                                    <div class="ai-result-actions">
+                                        <button class="btn btn-sm btn-outline" onclick="copyAllResult('detail-result')">复制全部</button>
+                                        <button class="btn btn-sm btn-outline" onclick="generateDetail()">重新生成</button>
+                                    </div>
+                                </div>
+                                <div class="ai-result-body" id="detail-result">
+                                    <div class="ai-result-empty">
+                                        <div class="ai-result-empty-icon">📄</div>
+                                        <p class="ai-result-empty-text">填写左侧参数，点击生成按钮开始</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 客服话术生成 -->
+                    <div id="admin-service" class="admin-page" style="display:none">
+                        <div class="page-header">
+                            <div>
+                                <h1 class="page-title">客服话术生成</h1>
+                                <p class="page-desc">覆盖售前售中售后全场景的专业话术</p>
+                            </div>
+                        </div>
+                        <div class="ai-generate-layout">
+                            <div class="ai-form-card">
+                                <div class="ai-form-header">
+                                    <h3 class="ai-form-title">参数配置</h3>
+                                    <p class="ai-form-desc">选择场景和问题，生成专业话术</p>
+                                </div>
+                                <div class="ai-form-body">
+                                    <div class="form-group">
+                                        <label class="form-label">应用场景</label>
+                                        <select id="service-scenario" class="form-select">
+                                            <option value="售前咨询">售前咨询</option>
+                                            <option value="售中跟进">售中跟进</option>
+                                            <option value="售后处理">售后处理</option>
+                                            <option value="差评挽回">差评挽回</option>
+                                            <option value="催单催付">催单催付</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">客户问题 *</label>
+                                        <textarea id="service-question" class="form-textarea" rows="3" placeholder="例如：这个衣服会起球吗？"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">话术风格</label>
+                                        <select id="service-style" class="form-select">
+                                            <option value="温柔亲和">温柔亲和</option>
+                                            <option value="专业自信">专业自信</option>
+                                            <option value="热情活泼">热情活泼</option>
+                                            <option value="简洁高效">简洁高效</option>
+                                            <option value="高情商挽留">高情商挽留</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="ai-form-footer">
+                                    <button class="btn btn-primary btn-block btn-lg" onclick="generateService()">
+                                        ✨ 开始AI生成
+                                    </button>
+                                    <p class="ai-usage-hint">今日剩余 <span id="service-remaining">10</span> 次生成机会</p>
+                                </div>
+                            </div>
+                            <div class="ai-result-card">
+                                <div class="ai-result-header">
+                                    <h3 class="ai-result-title">生成结果</h3>
+                                    <div class="ai-result-actions">
+                                        <button class="btn btn-sm btn-outline" onclick="copyAllResult('service-result')">复制全部</button>
+                                        <button class="btn btn-sm btn-outline" onclick="generateService()">重新生成</button>
+                                    </div>
+                                </div>
+                                <div class="ai-result-body" id="service-result">
+                                    <div class="ai-result-empty">
+                                        <div class="ai-result-empty-icon">💬</div>
+                                        <p class="ai-result-empty-text">填写左侧参数，点击生成按钮开始</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 竞品分析 -->
+                    <div id="admin-competitor" class="admin-page" style="display:none">
+                        <div class="page-header">
+                            <div>
+                                <h1 class="page-title">竞品智能分析</h1>
+                                <p class="page-desc">输入竞品链接，AI自动生成完整分析报告</p>
+                            </div>
+                        </div>
+                        <div class="competitor-input-row">
+                            <input type="text" id="competitor-url" class="form-input" placeholder="请输入竞品商品链接（淘宝/天猫/京东/拼多多/抖音等）" style="height:44px">
+                            <button class="btn btn-primary btn-lg" onclick="analyzeCompetitor()">
+                                🔍 开始分析
+                            </button>
+                        </div>
+                        <div id="competitor-result" style="display:none">
+                            <!-- 分析结果由JS动态渲染 -->
+                        </div>
+                        <div id="competitor-empty" class="card" style="padding:60px;text-align:center">
+                            <div style="font-size:64px;margin-bottom:20px">🔍</div>
+                            <h3 style="margin-bottom:10px">开始竞品分析</h3>
+                            <p style="color:var(--text-secondary);margin-bottom:20px">输入竞品商品链接，AI将自动分析价格、销量、评价、促销策略等</p>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+                                <span class="tag tag-primary">支持淘宝/天猫</span>
+                                <span class="tag tag-success">支持京东</span>
+                                <span class="tag tag-warning">支持拼多多</span>
+                                <span class="tag tag-info">支持抖音</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 店铺数据监控 -->
+                    <div id="admin-shop-data" class="admin-page" style="display:none">
+                        <div class="page-header">
+                            <div>
+                                <h1 class="page-title">店铺数据监控</h1>
+                                <p class="page-desc">实时监控店铺核心指标，数据驱动运营决策</p>
+                            </div>
+                            <div class="page-actions">
+                                <button class="btn btn-outline">实时刷新</button>
+                                <button class="btn btn-primary">导出数据</button>
+                            </div>
+                        </div>
+                        <div id="shop-data-content">
+                            <div class="card" style="padding:60px;text-align:center">
+                                <div style="font-size:64px;margin-bottom:20px">📊</div>
+                                <h3 style="margin-bottom:10px">绑定店铺查看数据</h3>
+                                <p style="color:var(--text-secondary);margin-bottom:20px">绑定您的电商店铺后，即可查看实时运营数据</p>
+                                <button class="btn btn-primary" onclick="switchAdminPage('shop-bind')">立即绑定店铺</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI运营诊断 -->
+                    <div id="admin-diagnosis" class="admin-page" style="display:none">
+                        <div class="page-header">
+                            <div>
+                                <h1 class="page-title">AI运营诊断</h1>
+                                <p class="page-desc">AI深度诊断店铺运营问题，给出可执行优化方案</p>
+                            </div>
+                        </div>
+                        <div class="card" style="padding:60px;text-align:center;margin-bottom:24px">
+                            <div style="font-size:64px;margin-bottom:20px">💡</div>
+                            <h3 style="margin-bottom:10px">开始AI智能诊断</h3>
+                            <p style="color:var(--text-secondary);margin-bottom:20px;max-width:500px;margin-left:auto;margin-right:auto">
+                                AI将从流量、转化、商品、客服等多维度深度诊断您的店铺运营状况，生成完整诊断报告和7天优化执行计划
+                            </p>
+                            <button class="btn btn-primary btn-lg" onclick="runDiagnosis()">
+                                🚀 开始AI智能诊断
+                            </button>
+                            <p style="color:var(--text-placeholder);font-size:12px;margin-top:12px">诊断过程约需30秒，请耐心等待</p>
+                        </div>
+                        <div id="diagnosis-result" style="display:none">
+                            <!-- 诊断结果由JS动态渲染 -->
+                        </div>
+                    </div>
+
+                    <!-- 报表生成 -->
+                    <div id="admin-report" class="admin-page" style="display:none">
+                        <div class="page-header">
+                            <div>
+                                <h1 class="page-title">自动报表生成</h1>
+                                <p class="page-desc">一键生成专业运营报表，支持多种格式导出</p>
+                            </div>
+                        </div>
+                        <div class="ai-generate-layout">
+                            <div class="ai-form-card">
+                                <div class="ai-form-header">
+                                    <h3 class="ai-form-title">报表配置</h3>
+                                    <p class="ai-form-desc">选择报表类型和周期</p>
+                                </div>
+                                <div class="ai-form-body">
+                                    <div class="form-group">
+                                        <label class="form-label">报表类型</label>
+                                        <select id="report-type" class="form-select">
+                                            <option value="weekly">运营周报</option>
+                                            <option value="monthly">运营月报 <span class="tag tag-pro">PRO</span></option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">统计周期</label>
+                                        <select class="form-select">
+                                            <option>本周</option>
+                                            <option>上周</option>
+                                            <option>近7天</option>
+                                            <option>近30天</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">包含模块</label>
+                                        <div style="display:flex;flex-direction:column;gap:8px">
+                                            <label class="checkbox-label"><input type="checkbox" checked> 数据总览</label>
+                                            <label class="checkbox-label"><input type="checkbox" checked> 商品分析</label>
+                                            <label class="checkbox-label"><input type="checkbox" checked> 流量分析</label>
+                                            <label class="checkbox-label"><input type="checkbox" checked> 转化分析</label>
+                                            <label class="checkbox-label"><input type="checkbox"> 竞品对比</label>
+                                            <label class="checkbox-label"><input type="checkbox" checked> 优化建议</label>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">导出格式</label>
+                                        <div style="display:flex;gap:12px">
+                                            <label class="checkbox-label"><input type="checkbox" checked> Word</label>
+                                            <label class="checkbox-label"><input type="checkbox"> PDF</label>
+                                            <label class="checkbox-label"><input type="checkbox"> Excel</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ai-form-footer">
+                                    <button class="btn btn-primary btn-block btn-lg" onclick="generateReport()">
+                                        📋 生成报表
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="ai-result-card">
+                                <div class="ai-result-header">
+                                    <h3 class="ai-result-title">报表预览</h3>
+                                    <div class="ai-result-actions">
+                                        <button class="btn btn-sm btn-outline" onclick="copyAllResult('report-result')">复制</button>
+                                        <button class="btn btn-sm btn-primary">导出Word</button>
+                                    </div>
+                                </div>
+                                <div class="ai-result-body" id="report-result">
+                                    <div class="ai-result-empty">
+                                        <div class="ai-result-empty-icon">📋</div>
+                                        <p class="ai-result-empty-text">配置左侧参数，点击生成报表</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 店铺绑定 -->
+                    <div id="admin-shop-bind" class="admin-page" style="display:none">
+                        <div class="page-header">
+                            <div>
+                                <h1 class="page-title">店铺绑定管理</h1>
+                                <p class="page-desc">绑定您的电商店铺，开启数据分析功能</p>
+                            </div>
+                            <div class="page-actions">
+                                <button class="btn btn-primary" onclick="showBindShopModal()">+ 绑定新店铺</button>
+                            </div>
+                        </div>
+                        <div id="bound-shops-list" class="shop-grid">
+                            <!-- 店铺列表由JS动态渲染 -->
+                            <div class="empty-state" style="grid-column:1/-1">
+                                <div class="empty-state-icon">🏪</div>
+                                <p class="empty-state-text">暂无绑定店铺，点击上方按钮绑定</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 会员升级 -->
+                    <div id="admin-pricing-admin" class="admin-page" style="display:none">
+                        <div class="page-header">
+                            <div>
+                                <h1 class="page-title">会员升级</h1>
+                                <p class="page-desc">升级会员，解锁更多高级功能</p>
+                            </div>
+                        </div>
+                        <div class="card" style="padding:24px;margin-bottom:24px">
+                            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+                                <div>
+                                    <h3 style="margin-bottom:8px">当前套餐：<span id="current-plan-name">免费版</span></h3>
+                                    <p style="color:var(--text-secondary)">今日AI使用：<span id="plan-ai-usage">0</span>/<span id="plan-ai-limit">10</span> 次</p>
+                                </div>
+                                <button class="btn btn-primary" onclick="showUpgradeModal()">立即升级</button>
+                            </div>
+                        </div>
+                        <div class="pricing-grid">
+                            <!-- 套餐卡片由JS动态渲染 -->
+                        </div>
+                    </div>
+
+                    <!-- 个人中心 -->
+                    <div id="admin-profile" class="admin-page" style="display:none">
+                        <div class="page-header">
+                            <div>
+                                <h1 class="page-title">个人中心</h1>
+                                <p class="page-desc">管理您的账号信息和安全设置</p>
+                            </div>
+                        </div>
+                        <div class="two-col-grid">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3>账号信息</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+                                        <div class="sidebar-avatar" style="width:64px;height:64px;font-size:24px" id="profile-avatar">用</div>
+                                        <div>
+                                            <h4 id="profile-username" style="margin-bottom:4px">用户</h4>
+                                            <p style="color:var(--text-secondary);font-size:13px" id="profile-phone">--</p>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">昵称</label>
+                                        <input type="text" class="form-input" placeholder="请输入昵称">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">邮箱</label>
+                                        <input type="email" class="form-input" placeholder="请输入邮箱">
+                                    </div>
+                                    <button class="btn btn-primary">保存修改</button>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3>安全设置</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label class="form-label">原密码</label>
+                                        <input type="password" class="form-input" placeholder="请输入原密码" autocomplete="current-password">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">新密码</label>
+                                        <input type="password" class="form-input" placeholder="至少8位，含大小写字母和数字" autocomplete="new-password">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">确认新密码</label>
+                                        <input type="password" class="form-input" placeholder="再次输入新密码" autocomplete="new-password">
+                                    </div>
+                                    <button class="btn btn-primary">修改密码</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card" style="margin-top:24px">
+                            <div class="card-header">
+                                <h3>使用统计</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="stats-grid" style="margin-bottom:0">
+                                    <div class="stat-card">
+                                        <div class="stat-icon blue">📝</div>
+                                        <div class="stat-info">
+                                            <div class="stat-label">累计AI生成</div>
+                                            <div class="stat-value">0 次</div>
+                                        </div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-icon green">🔍</div>
+                                        <div class="stat-info">
+                                            <div class="stat-label">累计竞品分析</div>
+                                            <div class="stat-value">0 次</div>
+                                        </div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-icon purple">🏪</div>
+                                        <div class="stat-info">
+                                            <div class="stat-label">绑定店铺</div>
+                                            <div class="stat-value">0 个</div>
+                                        </div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-icon orange">📅</div>
+                                        <div class="stat-info">
+                                            <div class="stat-label">注册时间</div>
+                                            <div class="stat-value" style="font-size:16px">--</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ==================== 通用组件 ==================== -->
+    <!-- Toast容器 -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loading-text">加载中...</div>
+    </div>
+
+    <!-- 绑定店铺弹窗 -->
+    <div class="modal-overlay" id="bind-shop-modal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3>绑定新店铺</h3>
+                <span class="modal-close" onclick="closeModal('bind-shop-modal')">×</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">选择平台</label>
+                    <select id="bind-platform" class="form-select">
+                        <option value="淘宝">淘宝/天猫</option>
+                        <option value="京东">京东</option>
+                        <option value="拼多多">拼多多</option>
+                        <option value="抖音">抖音小店</option>
+                        <option value="小红书">小红书</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">店铺名称</label>
+                    <input type="text" id="bind-shop-name" class="form-input" placeholder="请输入店铺名称">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">授权码 / API密钥</label>
+                    <input type="text" id="bind-auth-code" class="form-input" placeholder="请输入授权码">
+                    <p style="font-size:12px;color:var(--text-secondary);margin-top:4px">如何获取授权码？<a>查看教程</a></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('bind-shop-modal')">取消</button>
+                <button class="btn btn-primary" onclick="bindShop()">确认绑定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 升级会员弹窗 -->
+    <div class="modal-overlay" id="upgrade-modal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3>升级会员</h3>
+                <span class="modal-close" onclick="closeModal('upgrade-modal')">×</span>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom:16px;color:var(--text-secondary)">选择您要升级的套餐：</p>
+                <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
+                    <label class="checkbox-label" style="padding:16px;border:1px solid var(--border);border-radius:8px;cursor:pointer">
+                        <input type="radio" name="upgrade-plan" value="monthly" checked>
+                        <div style="flex:1">
+                            <div style="font-weight:600">月付版 - ¥39/月</div>
+                            <div style="font-size:12px;color:var(--text-secondary)">无限AI生成 + 店铺数据监控 + AI诊断</div>
+                        </div>
+                    </label>
+                    <label class="checkbox-label" style="padding:16px;border:1px solid var(--border);border-radius:8px;cursor:pointer">
+                        <input type="radio" name="upgrade-plan" value="yearly">
+                        <div style="flex:1">
+                            <div style="font-weight:600">年付版 - ¥399/年 <span class="tag tag-success">省17%</span></div>
+                            <div style="font-size:12px;color:var(--text-secondary)">月付版全部功能 + 月报生成 + 优先支持</div>
+                        </div>
+                    </label>
+                </div>
+                <div class="upgrade-modal-features">
+                    <div class="upgrade-modal-feature"><span class="check">✓</span> AI内容生成无限次</div>
+                    <div class="upgrade-modal-feature"><span class="check">✓</span> 竞品分析无限次</div>
+                    <div class="upgrade-modal-feature"><span class="check">✓</span> 店铺数据实时监控</div>
+                    <div class="upgrade-modal-feature"><span class="check">✓</span> AI智能运营诊断</div>
+                    <div class="upgrade-modal-feature"><span class="check">✓</span> 专业报表生成与导出</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('upgrade-modal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmUpgrade()">确认升级</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
 </body>
 </html>

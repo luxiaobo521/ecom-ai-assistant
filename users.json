@@ -1,115 +1,207 @@
 {
-  "testuser2": {
-    "user_id": "3c013e50-f6a8-4a0c-96df-7b00e46ea442",
-    "username": "testuser2",
-    "email": "test2@test.com",
-    "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
-    "created_at": 1788684639.9542449,
-    "usage_count": 0
-  },
-  "13800138000": {
-    "user_id": "936ef95f-8189-4e57-8264-01b71da0525b",
-    "username": "13800138000",
-    "phone": "13800138000",
-    "email": "",
-    "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+  "17754619883": {
+    "id": "a19e9c4a-ebc5-4e24-8c31-93ae6b0a9b0b",
+    "username": "17754619883",
+    "phone": "17754619883",
+    "password": "4cef9150b2d3ee702b4c0d917f514dc772ec791a62b6d9a2e777978887fdb9d3",
     "plan": "free",
-    "created_at": 1788685338.9025228,
-    "daily_ai_usage": 3,
-    "daily_competitor_usage": 1,
-    "last_usage_date": "2026-09-06",
-    "bound_shops": [
-      {
-        "id": "07a1eeb6-f9b6-41e6-bde1-961dfa7654bd",
-        "platform": "淘宝",
-        "shop_name": "测试店铺",
-        "auth_code": "test123",
-        "status": "active",
-        "bind_time": 1788685338.9380257,
-        "last_sync": 1788685338.9380257
-      }
-    ]
-  },
-  "13400134000": {
-    "user_id": "d25f50e9-1939-4348-866c-88dc10090ec1",
-    "username": "13400134000",
-    "phone": "13400134000",
+    "nickname": "电商用户9883",
     "email": "",
-    "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
-    "plan": "free",
-    "created_at": 1788687191.2783046,
-    "daily_ai_usage": 0,
-    "daily_competitor_usage": 0,
-    "last_usage_date": "2026-09-06",
-    "bound_shops": []
-  },
-  "13300133000": {
-    "user_id": "4a5f349a-d883-4929-9133-18e372ce9b75",
-    "username": "13300133000",
-    "phone": "13300133000",
-    "email": "",
-    "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
-    "plan": "free",
-    "created_at": 1788687252.1416757,
-    "daily_ai_usage": 3,
-    "daily_competitor_usage": 1,
-    "last_usage_date": "2026-09-06",
-    "bound_shops": [
-      {
-        "id": "e6ac8300-57c7-4ff8-a2c1-06e394e941c1",
-        "platform": "淘宝",
-        "shop_name": "测试淘宝店",
-        "auth_code": "test123456",
-        "status": "active",
-        "bind_time": 1788687300.9018836,
-        "last_sync": 1788687300.9018838
-      }
-    ]
-  },
-  "13200132000": {
-    "user_id": "5947763d-cd3a-4d6f-b53f-ef5009642a92",
-    "username": "13200132000",
-    "phone": "13200132000",
-    "email": "",
-    "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
-    "plan": "free",
-    "created_at": 1788687326.905157,
-    "daily_ai_usage": 0,
+    "city": "",
+    "avatar": "",
+    "created_at": 1788701212.614564,
+    "last_login": 1788706780.7034657,
+    "daily_ai_usage": 1,
     "daily_competitor_usage": 0,
     "last_usage_date": "2026-09-06",
     "bound_shops": [
       {
-        "id": "b2cbdbae-e9c6-4758-8def-f95d9f010243",
+        "id": "278486d1-cfaa-42cd-96cc-5b2e1da80a88",
         "platform": "淘宝",
-        "shop_name": "测试店铺",
-        "auth_code": "test123",
+        "shop_name": "我的测试淘宝店",
+        "auth_code": "demo_auth_278486d1",
+        "shop_url": "",
         "status": "active",
-        "bind_time": 1788687326.9131498,
-        "last_sync": 1788687326.9131503
+        "bind_time": 1788701379.6946757,
+        "last_sync": 1788701379.694676,
+        "shop_avatar": "淘"
       }
-    ]
-  },
-  "13100131000": {
-    "user_id": "14397cef-8f4f-471a-93a7-6e7d1fb2fbac",
-    "username": "13100131000",
-    "phone": "13100131000",
-    "email": "",
-    "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
-    "plan": "free",
-    "created_at": 1788687477.8896668,
-    "daily_ai_usage": 0,
-    "daily_competitor_usage": 0,
-    "last_usage_date": "2026-09-06",
-    "bound_shops": [
+    ],
+    "ai_history": [
       {
-        "id": "209359f5-fb36-494e-9ac4-27108ef568b1",
-        "platform": "淘宝",
-        "shop_name": "我的测试店铺",
-        "auth_code": "auth123456",
-        "status": "active",
-        "bind_time": 1788687478.4129891,
-        "last_sync": 1788687478.4129894
+        "id": "95e18563-3391-44eb-8dfd-82683033cca3",
+        "type": "title",
+        "title": "纯棉短袖T恤男士夏季新款",
+        "result": "1. 【爆款】2026新款纯棉短袖T恤男士夏季新款 100%纯棉、透气吸汗、修身版型、夏季必备 百搭潮流款\n2. taobao热销 纯棉短袖T恤男士夏季新款 引流爆款风格 高点击率\n3. 【商场同款】纯棉短袖T恤男士夏季新款 100%纯棉、透气吸汗、修身版型、夏季必备 品质保证\n4. 2026新品 纯棉短袖T恤男士夏季新款 网红推荐 限时特惠\n5. 【销量10万+】纯棉短袖T恤男士夏季新款 好评如潮 复购率高\n6. 纯棉短袖T恤男士夏季新款 搜索优化 精准引流\n7. 【官方正品】纯棉短袖T恤男士夏季新款 假一赔十 极速发货\n8. 必备 纯棉短袖T恤男士夏季新款 简约时尚 百搭款\n9. 【限时折扣】纯棉短袖T恤男士夏季新款 100%纯棉、透气吸汗、修身版型、夏季必备 今日特价\n10. 纯棉短袖T恤男士夏季新款 品质严选 不满意包退 放心购买",
+        "params": {
+          "platform": "taobao",
+          "style": "引流爆款"
+        },
+        "favorite": false,
+        "created_at": 1788701476.3247185
       }
-    ]
+    ],
+    "favorites": [],
+    "orders": [],
+    "invoices": [],
+    "coupons": [
+      {
+        "id": "6e15cc08-99c2-4dae-8fa1-688a9feec995",
+        "name": "新用户专享50元优惠券",
+        "amount": 50,
+        "min_amount": 39,
+        "type": "discount",
+        "status": "available",
+        "created_at": 1788701212.614564,
+        "expire_at": 1789306012.614564,
+        "scope": "全部套餐"
+      }
+    ],
+    "notifications": [
+      {
+        "id": "9a22b605-ecf4-4b90-9263-25455965b9ca",
+        "type": "security",
+        "icon": "🔐",
+        "title": "新设备登录提醒",
+        "content": "您的账号在电脑端浏览器登录，IP：127.0.0.1。如非本人操作请及时修改密码。",
+        "read": false,
+        "action_type": "",
+        "action_data": "",
+        "created_at": 1788706780.703518
+      },
+      {
+        "id": "16c26f51-01b0-4dab-aede-af03d641f3a2",
+        "type": "system",
+        "icon": "🏪",
+        "title": "店铺绑定成功",
+        "content": "您已成功绑定淘宝店铺「我的测试淘宝店」，现在可以查看店铺数据了！",
+        "read": false,
+        "action_type": "",
+        "action_data": "",
+        "created_at": 1788701379.6955547
+      },
+      {
+        "id": "0e4a9af2-b38f-40c8-b950-4247d8b2f0bf",
+        "type": "security",
+        "icon": "🔐",
+        "title": "新设备登录提醒",
+        "content": "您的账号在电脑端浏览器登录，IP：127.0.0.1。如非本人操作请及时修改密码。",
+        "read": false,
+        "action_type": "",
+        "action_data": "",
+        "created_at": 1788701353.8913782
+      },
+      {
+        "id": "4841bfdf-d843-4567-a5d4-c8be9d34ee62",
+        "type": "security",
+        "icon": "🔐",
+        "title": "新设备登录提醒",
+        "content": "您的账号在电脑端浏览器登录，IP：127.0.0.1。如非本人操作请及时修改密码。",
+        "read": false,
+        "action_type": "",
+        "action_data": "",
+        "created_at": 1788701229.84736
+      },
+      {
+        "id": "8d5a3ac2-64b8-480f-b84c-4049ac5540c4",
+        "type": "activity",
+        "icon": "🎁",
+        "title": "新用户专享50元优惠券",
+        "content": "专业版首月仅需¥39，限时7天有效，快来使用吧！",
+        "read": false,
+        "action_type": "coupon",
+        "action_data": "",
+        "created_at": 1788701212.6565316
+      },
+      {
+        "id": "3aa81492-1484-4fd7-bfa6-20b8b88a20d2",
+        "type": "system",
+        "icon": "🎉",
+        "title": "欢迎使用电商AI运营助手",
+        "content": "注册即送10次AI生成次数，开始体验智能运营吧！",
+        "read": false,
+        "action_type": "",
+        "action_data": "",
+        "created_at": 1788701212.655964
+      }
+    ],
+    "tasks": [],
+    "invitations": [],
+    "feedbacks": [],
+    "used_templates": [],
+    "security_settings": {
+      "two_factor": false,
+      "login_alert": true
+    },
+    "devices": [
+      {
+        "id": "ee8b1751-b575-4be1-a1f5-fca976f28af2",
+        "device": "电脑端浏览器",
+        "ip": "127.0.0.1",
+        "location": "未知地区",
+        "login_time": 1788701212.614564,
+        "last_active": 1788701212.614564,
+        "current": false
+      },
+      {
+        "id": "d9caa9ce-4cbf-45af-9035-b3d81781dcd6",
+        "device": "电脑端浏览器",
+        "ip": "127.0.0.1",
+        "location": "未知地区",
+        "login_time": 1788701229.8473172,
+        "last_active": 1788701229.8473172,
+        "current": false
+      },
+      {
+        "id": "15840bef-cb52-4c39-9f24-5264061da0a4",
+        "device": "电脑端浏览器",
+        "ip": "127.0.0.1",
+        "location": "未知地区",
+        "login_time": 1788701353.8913229,
+        "last_active": 1788701353.8913229,
+        "current": false
+      },
+      {
+        "id": "8a72fcf4-ca41-4650-9b05-8e33f4b8dd4f",
+        "device": "电脑端浏览器",
+        "ip": "127.0.0.1",
+        "location": "未知地区",
+        "login_time": 1788706780.7034657,
+        "last_active": 1788706780.7034657,
+        "current": true
+      }
+    ],
+    "login_history": [
+      {
+        "time": 1788701212.614564,
+        "ip": "127.0.0.1",
+        "device": "电脑端浏览器",
+        "status": "success"
+      },
+      {
+        "time": 1788701229.8473172,
+        "ip": "127.0.0.1",
+        "device": "电脑端浏览器",
+        "status": "success"
+      },
+      {
+        "time": 1788701353.8913229,
+        "ip": "127.0.0.1",
+        "device": "电脑端浏览器",
+        "status": "success"
+      },
+      {
+        "time": 1788706780.7034657,
+        "ip": "127.0.0.1",
+        "device": "电脑端浏览器",
+        "status": "success"
+      }
+    ],
+    "member_expire": 0,
+    "invite_code": "619883",
+    "invited_by": "",
+    "total_invited": 0,
+    "total_reward": 0,
+    "last_login_ip": "127.0.0.1"
   }
 }

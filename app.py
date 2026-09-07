@@ -5,12 +5,15 @@
 """
 import os
 import json
+import base64
 import hashlib
 import time
 import uuid
 import random
 import re
 import html
+import threading
+import urllib.request
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, session, make_response
 
@@ -78,6 +81,134 @@ QQ_APP_ID = os.environ.get('QQ_APP_ID', '')
 QQ_APP_KEY = os.environ.get('QQ_APP_KEY', '')
 QQ_REDIRECT_URI = os.environ.get('QQ_REDIRECT_URI', 'https://ecom-ai-assistant-9dkf.onrender.com/auth/qq/callback')
 
+# ==================== 持久化存储层（GitHub API） ====================
+# 解决Render免费版临时文件系统导致的数据丢失问题：
+# 所有用户/订单/反馈数据实时同步到GitHub数据仓库，永久保存。
+GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', '')
+GITHUB_DATA_REPO = os.environ.get('GITHUB_DATA_REPO', 'luxiaobo521/ecom-ai-data')
+GITHUB_API_BASE = 'https://api.github.com/repos/' + GITHUB_DATA_REPO + '/contents/'
+APP_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# 内存缓存：{文件名: 数据}，{文件名: sha}，{文件名: 最后同步时间}
+_gh_cache = {}
+_gh_sha = {}
+_gh_last_sync = {}
+_gh_lock = threading.Lock()
+
+def _gh_request(method, url, payload=None):
+    """GitHub API请求"""
+    req = urllib.request.Request(url, method=method)
+    req.add_header('Authorization', 'Bearer ' + GITHUB_TOKEN)
+    req.add_header('Accept', 'application/vnd.github+json')
+    req.add_header('User-Agent', 'ecom-ai-assistant/1.0')
+    data = None
+    if payload is not None:
+        data = json.dumps(payload).encode('utf-8')
+        req.add_header('Content-Type', 'application/json')
+    with urllib.request.urlopen(req, data=data, timeout=30) as resp:
+        return json.loads(resp.read().decode('utf-8'))
+
+def _local_path(name):
+    return os.path.join(APP_BASE_DIR, name)
+
+def _read_local(name, default):
+    try:
+        with open(_local_path(name), 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+def _write_local(name, data):
+    try:
+        with open(_local_path(name), 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+def data_read(name, default=None):
+    """读取JSON数据：优先内存缓存，其次GitHub，最后本地文件"""
+    if default is None:
+        default = {} if name.endswith('users.json') else []
+    if name in _gh_cache:
+        return _gh_cache[name]
+    if GITHUB_TOKEN:
+        try:
+            resp = _gh_request('GET', GITHUB_API_BASE + name)
+            content = base64.b64decode(resp['content']).decode('utf-8')
+            data = json.loads(content)
+            _gh_sha[name] = resp['sha']
+            _gh_cache[name] = data
+            _gh_last_sync[name] = time.time()
+            return data
+        except Exception:
+            pass
+    # 回退本地文件
+    data = _read_local(name, default)
+    _gh_cache[name] = data
+    return data
+
+def data_write(name, data):
+    """写入JSON数据：更新缓存+本地，并同步到GitHub（带冲突重试）"""
+    _gh_cache[name] = data
+    _write_local(name, data)
+    if not GITHUB_TOKEN:
+        return True
+    # 合并写：2秒内的连续写入合并为一次（通过标记，由下一次写触发）
+    try:
+        with _gh_lock:
+            last = _gh_last_sync.get(name, 0)
+            now = time.time()
+            if now - last < 2:
+                # 太频繁，延迟合并：记录待写，下一次写时立即执行
+                _gh_last_sync[name] = now - 1.5
+            # 获取最新sha（防止409冲突）
+            try:
+                resp = _gh_request('GET', GITHUB_API_BASE + name)
+                sha = resp['sha']
+            except Exception:
+                sha = _gh_sha.get(name, '')
+            payload = {
+                'message': 'update ' + name + ' @ ' + time.strftime('%Y-%m-%d %H:%M:%S'),
+                'content': base64.b64encode(json.dumps(data, ensure_ascii=False).encode('utf-8')).decode('utf-8')
+            }
+            if sha:
+                payload['sha'] = sha
+            try:
+                resp = _gh_request('PUT', GITHUB_API_BASE + name, payload)
+                _gh_sha[name] = resp.get('content', {}).get('sha', resp.get('sha', ''))
+                _gh_last_sync[name] = time.time()
+                return True
+            except Exception:
+                # 409冲突重试一次（重新拉取sha）
+                try:
+                    time.sleep(0.3)
+                    resp = _gh_request('GET', GITHUB_API_BASE + name)
+                    payload['sha'] = resp['sha']
+                    resp = _gh_request('PUT', GITHUB_API_BASE + name, payload)
+                    _gh_sha[name] = resp.get('content', {}).get('sha', resp.get('sha', ''))
+                    _gh_last_sync[name] = time.time()
+                    return True
+                except Exception:
+                    return False
+    except Exception:
+        return False
+
+def data_init_repo():
+    """确保GitHub数据仓库存在（不存在则创建）"""
+    if not GITHUB_TOKEN:
+        return
+    try:
+        _gh_request('GET', 'https://api.github.com/repos/' + GITHUB_DATA_REPO)
+    except Exception:
+        try:
+            repo_name = GITHUB_DATA_REPO.split('/')[-1]
+            _gh_request('POST', 'https://api.github.com/user/repos',
+                        {'name': repo_name, 'description': '电商AI运营助手 - 数据存储', 'private': False,
+                         'auto_init': True})
+        except Exception:
+            pass
+
+
 USERS_FILE = os.path.join(os.path.dirname(__file__), 'users.json')
 ORDERS_FILE = os.path.join(os.path.dirname(__file__), 'orders.json')
 FEEDBACKS_FILE = os.path.join(os.path.dirname(__file__), 'feedbacks.json')
@@ -143,34 +274,22 @@ TEMPLATE_MARKET = [
 
 # ==================== 工具函数 ====================
 def load_users():
-    if os.path.exists(USERS_FILE):
-        with open(USERS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return {}
+    return data_read('users.json', {})
 
 def save_users(users):
-    with open(USERS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(users, f, ensure_ascii=False, indent=2)
+    return data_write('users.json', users)
 
 def load_orders():
-    if os.path.exists(ORDERS_FILE):
-        with open(ORDERS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return []
+    return data_read('orders.json', [])
 
 def save_orders(orders):
-    with open(ORDERS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(orders, f, ensure_ascii=False, indent=2)
+    return data_write('orders.json', orders)
 
 def load_feedbacks():
-    if os.path.exists(FEEDBACKS_FILE):
-        with open(FEEDBACKS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return []
+    return data_read('feedbacks.json', [])
 
 def save_feedbacks(feedbacks):
-    with open(FEEDBACKS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(feedbacks, feedbacks, ensure_ascii=False, indent=2)
+    return data_write('feedbacks.json', feedbacks)
 
 def hash_password(password):
     salt = 'ecommerce_ai_salt_2026_secure_v7'
@@ -1860,27 +1979,18 @@ ADMIN_PLANS = {'free': {'name': '免费版', 'price': 0}, 'pro': {'name': '专�
 def admin_load_json(filepath, default=None):
     if default is None:
         default = {} if filepath.endswith('users.json') else []
-    if os.path.exists(filepath):
-        try:
-            with open(filepath, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except Exception:
-            return default
-    return default
+    name = os.path.basename(filepath)
+    return data_read(name, default)
 
 def admin_save_json(filepath, data):
-    with open(filepath, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    name = os.path.basename(filepath)
+    return data_write(name, data)
 
 def admin_load_settings():
     default = {'site_name': '电商AI运营助手', 'site_status': 'online', 'registration_enabled': True, 'ai_generation_enabled': True, 'payment_enabled': True, 'maintenance_message': '系统维护中，请稍后访问', 'default_plan': 'free', 'plans': ADMIN_PLANS, 'contact_email': '3594438759@qq.com', 'icp_number': ''}
-    if os.path.exists(ADMIN_SETTINGS_FILE):
-        try:
-            with open(ADMIN_SETTINGS_FILE, 'r', encoding='utf-8') as f:
-                saved = json.load(f)
-                default.update(saved)
-        except Exception:
-            pass
+    saved = data_read('admin_settings.json', default)
+    if isinstance(saved, dict):
+        default.update(saved)
     return default
 
 def admin_add_log(action, detail=''):
@@ -2301,5 +2411,6 @@ def admin_logs_api():
 
 # ==================== 启动 ====================
 if __name__ == '__main__':
+    data_init_repo()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
